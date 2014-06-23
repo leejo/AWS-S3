@@ -6,7 +6,7 @@
 use strict;
 use ExtUtils::MakeMaker;
 use FindBin '$Bin';
-use constant TEST_COUNT => 9;
+use constant TEST_COUNT => 11;
 
 use lib "$Bin/lib","$Bin/../lib","$Bin/../blib/lib","$Bin/../blib/arch";
 
@@ -28,8 +28,21 @@ is($request->method,'POST','request method correct');
 is($request->header('Host'),'iam.amazonaws.com','host correct');
 is($request->header('X-Amz-Date'),'20140101T060000Z','timestamp correct');
 is($request->content,'Action=ListUsers&Version=2010-05-08','payload correct');
-is($request->header('Authorization'),'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20140101/us-east-1/iam/aws4_request, SignedHeaders=content-length;content-type;date;host;x-amz-date, Signature=02602afd2fea62f4759cee1fb8efd8c9a23677db0cd158cecf161cef7d218d9d','signature correct');
-is($signer->signed_url($request),'https://iam.amazonaws.com?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIDEXAMPLE%2F20140101%2Fus-east-1%2Fiam%2Faws4_request&X-Amz-Date=20140101T060000Z&X-Amz-SignedHeaders=host&X-Amz-Signature=a5a51663feedc8a57a7958321cc5cb4fead89e50df943c5d7b62e1dac7013e49','signed url correct');
+is($request->header('Authorization'),'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20140101/us-east-1/iam/aws4_request, SignedHeaders=content-length;content-type;host;x-amz-date, Signature=0233049369ae675cea7616efa5d2e5216c37a4b1496a36595f32181f078e3549','signature correct');
+
+$request = GET('https://iam.amazonaws.com?Action=ListUsers&Version=2010-05-08',
+	       Date => '1 January 2014 01:00:00 -0500');
+
+my $expected = 'https://iam.amazonaws.com?Action=ListUsers&Version=2010-05-08&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIDEXAMPLE%2F20140101%2Fus-east-1%2Fiam%2Faws4_request&X-Amz-Date=20140101T060000Z&X-Amz-SignedHeaders=host&X-Amz-Signature=9d0b832ec5c5ebba65a462951e29dcc2eff53b000105a727dd0f233f328e92b2';
+
+is($signer->signed_url($request),$expected,'signed url from request correct');
+
+my $url = 'https://iam.amazonaws.com?Action=ListUsers&Version=2010-05-08&Date=1%20January%202014%2001:00:00%20-0500';
+
+is($signer->signed_url($url),$expected,'signed url from url correct (1)');
+
+$url = 'https://iam.amazonaws.com?Action=ListUsers&Version=2010-05-08&Date=20140101T060000Z';
+is($signer->signed_url($url),$expected,'signed url from url correct (2)');
 
 exit 0;
 

@@ -70,6 +70,10 @@ Arguments:
 If a security token is provided, it overrides any values given for
 -access_key or -secret_key.
 
+If the environment variables EC2_ACCESS_KEY and/or EC2_SECRET_KEY are
+set, their contents are used as defaults for -acccess_key and
+-secret_key.
+
 =cut
 
 sub new {
@@ -133,16 +137,13 @@ sub sign {
     $self->_sign($request,$payload_sha256_hex);
 }
 
-=item my $url $signer->signed_url($request [,$expires])
+=item my $url $signer->signed_url($request_or_uri [,$expires])
 
-Given an HTTP::Request containing an AWS REST API call, generate a
-signed URL suitable for passing to a get request. The AWS Action,
-action parameters, and all the authentication information is included
-in the URL, and can be shared with non-AWS users for the purpose of,
+Pass an HTTP::Request, a URI object, or just a plain URL string
+containing the proper endpoint and parameters needed for an AWS REST
+API Call. This method will return an appropriately signed request as a
+URI object, which can be shared with non-AWS users for the purpose of,
 e.g., accessing an object in a private S3 bucket.
-
-The HTTP::Request must contain all the information needed to identify
-the Amazon endpoint and execute the request (see the sign() method).
 
 Pass an optional $expires argument to indicate that the URL will only
 be valid for a finite period of time. The value of the argument is in
@@ -153,14 +154,33 @@ seconds.
 
 sub signed_url {
     my $self    = shift;
-    my ($request,$expires) = @_;
+    my ($arg1,$expires) = @_;
+    
+    my ($request,$uri);
 
-    my $uri = $request->uri;
-    $uri->query_param_append('X-Amz-Algorithm'  => $self->_algorithm);
-    $uri->query_param_append('X-Amz-Credential' => $self->access_key . '/' . $self->_scope($request));
-    $uri->query_param_append('X-Amz-Date'       => $self->_datetime($request));
-    $uri->query_param_append('X-Amz-Expires'    => $expires) if $expires;
-    $uri->query_param_append('X-Amz-SignedHeaders' => 'host');
+    if (ref $arg1 && UNIVERSAL::isa($arg1,'HTTP::Request')) {
+	$request = $arg1;
+	$uri = $request->uri;
+	my $content = $request->content;
+	$uri->query($content) if $content;
+	if (my $date = $request->header('X-Amz-Date') || $request->header('Date')) {
+	    $uri->query_param('Date'=>$date);
+	}
+    }
+
+    $uri ||= URI->new($arg1);
+    my $date = $uri->query_param_delete('Date') || $uri->query_param_delete('X-Amz-Date');
+    $request = HTTP::Request->new(GET=>$uri);
+    $request->header('Date'=> $date);
+    $uri = $request->uri;  # because HTTP::Request->new() copies the uri!
+
+    return $uri if $uri->query_param('X-Amz-Signature');
+
+    $uri->query_param('X-Amz-Algorithm'  => $self->_algorithm);
+    $uri->query_param('X-Amz-Credential' => $self->access_key . '/' . $self->_scope($request));
+    $uri->query_param('X-Amz-Date'       => $self->_datetime($request));
+    $uri->query_param('X-Amz-Expires'    => $expires) if $expires;
+    $uri->query_param('X-Amz-SignedHeaders' => 'host');
 
     $self->_sign($request);
     my ($algorithm,$credential,$signedheaders,$signature) =
@@ -201,8 +221,7 @@ sub _parse_scope {
 sub _datetime {
     my $self = shift;
     my $request = shift;
-    return $self->{datetime}{$request} if exists $self->{datetime}{$request};
-    return $self->{datetime}{$request} = $request->header('x-amz-date') || $self->_zulu_time;    
+    return $request->header('x-amz-date') || $self->_zulu_time($request);
 }
 
 sub _algorithm { return 'AWS4-HMAC-SHA256' }
@@ -210,6 +229,7 @@ sub _algorithm { return 'AWS4-HMAC-SHA256' }
 sub _sign {
     my $self    = shift;
     my ($request,$payload_sha256_hex) = @_;
+    return if $request->header('Authorization'); # don't overwrite
 
     my $datetime = $self->_datetime($request);
 
@@ -237,7 +257,6 @@ sub _zulu_time {
     return strftime('%Y%m%dT%H%M%SZ',@datetime);
 }
 
-
 sub _hash_canonical_request {
     my $self = shift;
     my ($request,$hashed_payload) = @_; # (HTTP::Request,sha256_hex($content))
@@ -258,8 +277,9 @@ sub _hash_canonical_request {
     my $canonical_query_string = join '&',map {my $key = $_; map {"$key=$_"} sort @{$canonical{$key}}} sort keys %canonical;
 
     # canonicalize the request headers
-    my @canonical;
+    my (@canonical,%signed_fields);
     for my $header (sort map {lc} $headers->header_field_names) {
+	next if $header =~ /^date$/i;
 	my @values = $headers->header($header);
 	# remove redundant whitespace
 	foreach (@values ) {
@@ -269,14 +289,14 @@ sub _hash_canonical_request {
 	    s/(\s)\s+/$1/g;
 	}
 	push @canonical,"$header:".join(',',@values);
+	$signed_fields{$header}++;
     }
     my $canonical_headers = join "\n",@canonical;
     $canonical_headers   .= "\n";
-    my $signed_headers    = join ';',sort map {lc} $headers->header_field_names;
+    my $signed_headers    = join ';',sort map {lc} keys %signed_fields;
 
     my $canonical_request = join("\n",$method,$path,$canonical_query_string,
 				 $canonical_headers,$signed_headers,$hashed_payload);
-
     my $request_digest    = sha256_hex($canonical_request);
     
     return ($request_digest,$signed_headers);
@@ -299,7 +319,6 @@ sub _calculate_signature {
 }
 
 1;
-
 
 =head1 SEE ALSO
 
