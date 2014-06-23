@@ -9,6 +9,8 @@ use Digest::SHA 'sha256_hex','hmac_sha256','hmac_sha256_hex';
 use Date::Parse;
 use Carp 'croak';
 
+our $VERSION = '1.00';
+
 =head1 NAME
 
 AWS::Signature4 - Create a version4 signature for Amazon Web Services
