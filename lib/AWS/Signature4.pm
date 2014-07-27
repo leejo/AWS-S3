@@ -30,7 +30,7 @@ AWS::Signature4 - Create a version4 signature for Amazon Web Services
 		    [Action=>'ListUsers',
 		     Version=>'2010-05-08']);
  $signer->sign($request);
- my $response = $ua->requeset($request);
+ my $response = $ua->request($request);
 
  # Example GET request
  my $uri     = URI->new('https://iam.amazonaws.com');
