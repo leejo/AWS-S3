@@ -23,7 +23,7 @@ AWS::Signature4 - Create a version4 signature for Amazon Web Services
 
  my $signer = AWS::Signature4->new(-access_key => 'AKIDEXAMPLE',
                                    -secret_key => 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY');
- my $ua     = LW::UserAgent->new();
+ my $ua     = LWP::UserAgent->new();
 
  # Example POST request
  my $request = POST('https://iam.amazonaws.com',
