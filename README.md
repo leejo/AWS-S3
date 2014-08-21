@@ -50,7 +50,7 @@ SYNOPSIS
 		     Version=>'2010-05-08']
                     );
  $signer->sign($request);                 # This signs the request
- my $response = $ua->requeset($request);  #  Fetch it
+ my $response = $ua->request($request);  #  Fetch it
 </pre>
 
 INSTALLATION
