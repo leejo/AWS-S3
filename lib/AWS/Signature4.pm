@@ -67,6 +67,7 @@ Arguments:
 
  -security_token     A VM::EC2::Security::Token object
 
+
 If a security token is provided, it overrides any values given for
 -access_key or -secret_key.
 
@@ -93,23 +94,26 @@ sub new {
 
     return bless {
 	access_key => $id,
-	secret_key => $secret},ref $self || $self;
+	secret_key => $secret,
+    },ref $self || $self;
 }
 
 sub access_key { shift->{access_key } } 
 sub secret_key { shift->{secret_key } }
 
-=item $signer->sign($request [,$payload_sha256_hex])
+=item $signer->sign($request [,$region] [,$payload_sha256_hex])
 
 Given an HTTP::Request object, add the headers required by AWS and
 then sign it with a version 4 signature by adding an "Authorization"
 header.
 
-To be successful, the request must include a URL from which the AWS
-endpoint and service can be derived, such as
-"ec2.us-east-1.amazonaws.com." The current date and time will be added
-to the request using an "X-Amz-Date header." To force the date and
-time to a fixed value, include the "Date" header in the request.
+The request must include a URL from which the AWS endpoint and service
+can be derived, such as "ec2.us-east-1.amazonaws.com." In some cases
+(e.g. S3 bucket operations) the endpoint does not indicate the
+region. In this case, the region can be forced by passing a defined
+value for $region. The current date and time will be added to the
+request using an "X-Amz-Date header." To force the date and time to a
+fixed value, include the "Date" header in the request.
 
 The request content, or "payload" is retrieved from the HTTP::Request
 object by calling its content() method.. Under some circumstances the
@@ -132,9 +136,9 @@ will include everything needed to perform the request.
 
 sub sign {
     my $self = shift;
-    my ($request,$payload_sha256_hex) = @_;
+    my ($request,$region,$payload_sha256_hex) = @_;
     $self->_add_date_header($request);
-    $self->_sign($request,$payload_sha256_hex);
+    $self->_sign($request,$region,$payload_sha256_hex);
 }
 
 =item my $url $signer->signed_url($request_or_uri [,$expires])
@@ -202,13 +206,19 @@ sub _add_date_header {
 
 sub _scope {
     my $self    = shift;
-    my $request = shift;
+    my ($request,$region) = @_;
     my $host     = $request->uri->host;
     my $datetime = $self->_datetime($request);
     my ($date)   = $datetime =~ /^(\d+)T/;
-    my ($service)  = $host =~ /^(\w+)/;
-    my ($region)   = $host =~ /^\w+\.([^.]+)\.amazonaws\.com/;
-    $region      ||= 'us-east-1';
+    my $service;
+    if ($host =~ /^([\w.-]+)\.s3\.amazonaws.com/) { # S3 bucket virtual host
+	$service = 's3';
+    } else {
+	($service)  = $host =~ /^(\w+)/;
+	my ($r)   = $host =~ /^[\w.-]+\.([^.]+)\.amazonaws\.com/;
+	$region ||= $r;
+    }
+    $region ||= 'us-east-1';  # default default default
     return "$date/$region/$service/aws4_request";
 }
 
@@ -228,15 +238,17 @@ sub _algorithm { return 'AWS4-HMAC-SHA256' }
 
 sub _sign {
     my $self    = shift;
-    my ($request,$payload_sha256_hex) = @_;
+    my ($request,$region,$payload_sha256_hex) = @_;
     return if $request->header('Authorization'); # don't overwrite
 
     my $datetime = $self->_datetime($request);
 
-    my $host        = $request->uri->host;
-    $request->header(host=>$host);
+    unless ($request->header('host')) {
+	my $host        = $request->uri->host;
+	$request->header(host=>$host);
+    }
 
-    my $scope      = $self->_scope($request);
+    my $scope      = $self->_scope($request,$region);
     my ($date,$region,$service) = $self->_parse_scope($scope);
 
     my $secret_key = $self->secret_key;
