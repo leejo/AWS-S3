@@ -213,12 +213,19 @@ sub _scope {
     my $service;
     if ($host =~ /^([\w.-]+)\.s3\.amazonaws.com/) { # S3 bucket virtual host
 	$service = 's3';
-    } else {
-	($service)  = $host =~ /^(\w+)/;
-	my ($r)   = $host =~ /^[\w.-]+\.([^.]+)\.amazonaws\.com/;
-	$region ||= $r;
+	$region  ||= 'us-east-1';
+    } elsif  ($host =~ /^[\w-]+\.(\w+)-([\w-]+)\.amazonaws\.com/) {
+	$service = $1;
+	$region  ||= $2;
+    } elsif ($host =~ /^(\w+)-([\w-]+)\.amazonaws\.com/) {
+	$service = $1;
+	$region  ||= $2;
+    } elsif ($host =~ /^(\w+)\.([\w-]+)\.amazonaws\.com/) {
+	$service = $1;
+	$region  ||= $2;
     }
-    $region ||= 'us-east-1';  # default default default
+    $service ||= 's3';
+    $region  ||= 'us-east-1';  # default default default
     return "$date/$region/$service/aws4_request";
 }
 
