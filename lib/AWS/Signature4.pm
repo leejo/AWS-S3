@@ -214,15 +214,12 @@ sub _scope {
     if ($host =~ /^([\w.-]+)\.s3\.amazonaws.com/) { # S3 bucket virtual host
 	$service = 's3';
 	$region  ||= 'us-east-1';
-    } elsif  ($host =~ /^[\w-]+\.(\w+)-([\w-]+)\.amazonaws\.com/) {
-	$service = $1;
+    } elsif  ($host =~ /^[\w-]+\.s3-([\w-]+)\.amazonaws\.com/) {
+	$service = 's3';
 	$region  ||= $2;
-    } elsif ($host =~ /^(\w+)-([\w-]+)\.amazonaws\.com/) {
-	$service = $1;
-	$region  ||= $2;
-    } elsif ($host =~ /^(\w+)\.([\w-]+)\.amazonaws\.com/) {
-	$service = $1;
-	$region  ||= $2;
+    } elsif ($host =~ /^(\w+)[-.]([\w-]+)\.amazonaws\.com/) {
+	$service  = $1;
+	$region ||= $2;
     }
     $service ||= 's3';
     $region  ||= 'us-east-1';  # default default default
@@ -256,7 +253,8 @@ sub _sign {
     }
 
     my $scope      = $self->_scope($request,$region);
-    my ($date,$region,$service) = $self->_parse_scope($scope);
+    my ($date,$service);
+    ($date,$region,$service) = $self->_parse_scope($scope);
 
     my $secret_key = $self->secret_key;
     my $access_key = $self->access_key;
