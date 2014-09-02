@@ -9,7 +9,7 @@ use Digest::SHA 'sha256_hex','hmac_sha256','hmac_sha256_hex';
 use Date::Parse;
 use Carp 'croak';
 
-our $VERSION = '1.00';
+our $VERSION = '1.01';
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ AWS::Signature4 - Create a version4 signature for Amazon Web Services
 		    [Action=>'ListUsers',
 		     Version=>'2010-05-08']));
  $signer->sign($request);
- my $response = $ua->requeset($request);
+ my $response = $ua->request($request);
 
  # Example GET request
  my $uri     = URI->new('https://iam.amazonaws.com');
@@ -220,9 +220,12 @@ sub _scope {
     } elsif ($host =~ /^(\w+)[-.]([\w-]+)\.amazonaws\.com/) {
 	$service  = $1;
 	$region ||= $2;
+    } elsif ($host =~ /^([\w-]+)\.amazonaws\.com/) {
+	$service = $1;
+	$region  = 'us-east-1';
     }
     $service ||= 's3';
-    $region  ||= 'us-east-1';  # default default default
+    $region  ||= 'us-east-1';  # default
     return "$date/$region/$service/aws4_request";
 }
 

@@ -1,1 +1,3 @@
-1.00   Basic module written.
+1.01   -Improvements to the region guessing algorithm to support s3 virtual hosts
+
+1.00   -Basic module written.
