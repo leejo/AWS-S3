@@ -328,13 +328,27 @@ sub _string_to_sign {
     return join("\n",'AWS4-HMAC-SHA256',$datetime,$credential_scope,$hashed_request);
 }
 
-sub _calculate_signature {
+
+=item $signing_key = AWS::Signature4->signing_key($secret_access_key,$service_name,$region,$date)
+
+Return just the signing key in the event you wish to roll your own signature.
+
+=cut
+
+sub signing_key {
     my $self = shift;
-    my ($kSecret,$service,$region,$date,$string_to_sign) = @_;
+    my ($kSecret,$service,$region,$date) = @_;
     my $kDate    = hmac_sha256($date,'AWS4'.$kSecret);
     my $kRegion  = hmac_sha256($region,$kDate);
     my $kService = hmac_sha256($service,$kRegion);
     my $kSigning = hmac_sha256('aws4_request',$kService);
+    return $kSigning;
+}
+
+sub _calculate_signature {
+    my $self = shift;
+    my ($kSecret,$service,$region,$date,$string_to_sign) = @_;
+    my $kSigning = $self->signing_key($kSecret,$service,$region,$date);
     return hmac_sha256_hex($string_to_sign,$kSigning);
 }
 
