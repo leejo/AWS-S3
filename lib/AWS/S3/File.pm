@@ -334,16 +334,5 @@ L<AWS::S3::FileIterator>
 
 L<AWS::S3::Owner>
 
-=head1 AUTHOR
-
-John Drago <jdrago_999@yahoo.com>
-
-=head1 LICENSE AND COPYRIGHT
-
-This software is Free software and may be used and redistributed under the same
-terms as any version of perl itself.
-
-Copyright John Drago 2011 all rights reserved.
-
 =cut
 

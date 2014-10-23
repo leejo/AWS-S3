@@ -1,10 +1,10 @@
 use strict;
 use warnings;
 use inc::Module::Install;
-use 5.008005;
+use 5.010001;
 
 name 'AWS-S3';
-perl_version '5.008001';
+perl_version '5.010001';
 license 'perl';
 all_from 'lib/AWS/S3.pm';
 

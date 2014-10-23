@@ -111,6 +111,10 @@ __END__
 
 AWS::S3 - Lightweight interface to Amazon S3 (Simple Storage Service)
 
+=for html
+<a href='https://travis-ci.org/leejo/AWS-S3?branch=master'><img src='https://travis-ci.org/leejo/AWS-S3.svg?branch=master' /></a>
+<a href='https://coveralls.io/r/leejo/AWS-S3?branch=master'><img src='https://coveralls.io/repos/leejo/AWS-S3/badge.png?branch=master' alt='Coverage Status' /></a>
+
 =head1 SYNOPSIS
 
   use AWS::S3;
@@ -295,7 +299,7 @@ L<AWS::S3::Owner>
 
 =head1 AUTHOR
 
-John Drago <jdrago_999@yahoo.com>
+Originally John Drago C<jdrago_999@yahoo.com>, currently maintained by Lee Johnson (LEEJO) C<leejo@cpan.org>
 
 =head1 LICENSE AND COPYRIGHT
 

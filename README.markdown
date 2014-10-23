@@ -2,6 +2,12 @@
 
 AWS::S3 - Lightweight interface to Amazon S3 (Simple Storage Service)
 
+<div>
+
+    <a href='https://travis-ci.org/leejo/AWS-S3?branch=master'><img src='https://travis-ci.org/leejo/AWS-S3.svg?branch=master' /></a>
+    <a href='https://coveralls.io/r/leejo/AWS-S3?branch=master'><img src='https://coveralls.io/repos/leejo/AWS-S3/badge.png?branch=master' alt='Coverage Status' /></a>
+</div>
+
 # SYNOPSIS
 
     use AWS::S3;
@@ -186,7 +192,7 @@ See [AWS::S3::Bucket](https://metacpan.org/pod/AWS::S3::Bucket) for details on h
 
 # AUTHOR
 
-John Drago <jdrago.999+cpan@gmail.com>
+Originally John Drago `jdrago_999@yahoo.com`, currently maintained by Lee Johnson (LEEJO) `leejo@cpan.org`
 
 # LICENSE AND COPYRIGHT
 
