@@ -13,7 +13,7 @@ use AWS::S3::ResponseParser;
 use AWS::S3::Owner;
 use AWS::S3::Bucket;
 
-our $VERSION = '0.040_01';
+our $VERSION = '0.050';
 
 has [qw/access_key_id secret_access_key/] => ( is => 'ro', isa => 'Str' );
 

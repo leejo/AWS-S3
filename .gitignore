@@ -6,3 +6,4 @@ MYMETA.yml
 MYMETA.json
 Makefile.old
 cover_db
+AWS-S3*.gz

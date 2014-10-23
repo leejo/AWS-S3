@@ -17,6 +17,7 @@ lib/AWS/S3/Request/GetBucketLocationConstraint.pm
 lib/AWS/S3/Request/GetBucketPolicy.pm
 lib/AWS/S3/Request/GetFileContents.pm
 lib/AWS/S3/Request/GetFileInfo.pm
+lib/AWS/S3/Request/GetPreSignedUrl.pm
 lib/AWS/S3/Request/ListAllMyBuckets.pm
 lib/AWS/S3/Request/ListBucket.pm
 lib/AWS/S3/Request/SetBucketAccessControl.pm
