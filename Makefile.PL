@@ -9,6 +9,7 @@ license 'perl';
 all_from 'lib/AWS/S3.pm';
 
 test_requires 'Test::More'  => '0';
+test_requires 'Test::Deep';
 
 requires 'Moose'                         => '2.0';
 requires 'MooseX::Types';
@@ -24,6 +25,7 @@ requires 'URI::Escape';
 requires 'Digest::HMAC_SHA1';
 requires 'Iterator::Paged';
 requires 'Test::Deep';
+requires 'JSON::XS';
 
 resources(
   'repository'  => 'https://github.com/jdrago999/AWS-S3'
