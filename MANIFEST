@@ -35,6 +35,9 @@ lib/AWS/S3/ResponseParser.pm
 lib/AWS/S3/Roles/BucketAction.pm
 lib/AWS/S3/Roles/Request.pm
 lib/AWS/S3/Signer.pm
-t/010-basic/010-basic.t
+t/001_compiles_pod.t
+t/002_changes.t
+t/010_basic.t
 t/020_endpoint.t
+t/030_signer.t
 t/040_file.t

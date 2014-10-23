@@ -2,6 +2,7 @@
 package AWS::S3::HTTPRequest;
 
 use Moose;
+use Moose::Util::TypeConstraints;
 use AWS::S3::Signer;
 
 use Carp 'confess';
@@ -9,6 +10,7 @@ use HTTP::Date 'time2str';
 use MIME::Base64 qw(encode_base64);
 use URI::Escape qw(uri_escape_utf8);
 use Digest::HMAC_SHA1;
+use HTTP::Headers;
 use URI;
 
 my $METADATA_PREFIX      = 'x-amz-meta-';
@@ -34,6 +36,12 @@ has 'path' => (
     isa      => 'Str',
 );
 
+class_type( 'HTTP::Headers' );
+
+coerce 'HTTP::Headers'
+    => from 'HashRef'
+    => via { my $h = HTTP::Headers->new( %$_ ) };
+
 has 'headers' => (
     is       => 'ro',
     required => 1,
@@ -42,8 +50,6 @@ has 'headers' => (
     default  => sub { HTTP::Headers->new() },
     coerce   => 1,
 );
-
-coerce 'HTTP::Headers' => from 'HashRef' => via { my $h = HTTP::Headers->new( %$_ ) };
 
 has 'content' => (
     is       => 'ro',

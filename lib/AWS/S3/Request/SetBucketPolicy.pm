@@ -38,7 +38,7 @@ sub request {
     my $signer = AWS::S3::Signer->new(
         s3           => $s->s3,
         method       => 'PUT',
-        uri          => $s->_uri
+        uri          => $s->_uri,
         content      => \$s->policy,
         content_type => '',
         content_md5  => '',

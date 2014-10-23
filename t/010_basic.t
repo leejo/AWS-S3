@@ -5,7 +5,7 @@ use warnings 'all';
 use Test::More 'no_plan';
 use Data::Dumper;
 use FindBin qw/ $Bin /;
-use lib "$Bin/../../lib";
+use lib "$Bin/../lib";
 
 use Carp 'confess';
 $SIG{__DIE__} = \&confess;
