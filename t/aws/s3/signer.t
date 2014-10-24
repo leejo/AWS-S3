@@ -5,7 +5,6 @@ use warnings;
 
 use Test::More;
 use Test::Deep;
-use FindBin qw/ $Bin /;
 
 use Carp 'confess';
 $SIG{__DIE__} = \&confess;

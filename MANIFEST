@@ -30,6 +30,9 @@ lib/AWS/S3/Signer.pm
 t/001_compiles_pod.t
 t/002_changes.t
 t/010_basic.t
-t/020_endpoint.t
-t/030_signer.t
-t/040_file.t
+t/aws/s3.t
+t/aws/s3/file.t
+t/aws/s3/signer.t
+t/aws/s3/bucket.t
+t/aws/s3/file_iterator.t
+t/aws/s3/http_request.t

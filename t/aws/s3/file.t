@@ -3,9 +3,24 @@
 use strict;
 use warnings;
 
+package Mocked::HTTP::Response;
+
+use Moose;
+extends 'HTTP::Response';
+
+sub content        { shift->{_msg}; }
+sub code           { 200 }
+sub friendly_error {}
+sub is_success     { 1 }
+sub header         { $_[1] =~ /content-length/i ? 1 : 'header' }
+
+1;
+
+package main;
+
 use Test::More;
 use Test::Deep;
-use FindBin qw/ $Bin $Script /;
+use FindBin qw/ $Script /;
 
 use Carp 'confess';
 $SIG{__DIE__} = \&confess;
@@ -72,9 +87,17 @@ ok( $file->update( contents => \'new contents' ),'update with args' );
 
 is(
     $file->signed_url( 1406712744 ),
-    'http://maibucket.s3.baz.com/040_file.t?AWSAccessKeyId=foo&Expires=1406712744&Signature=gqOO//FsAuSTvgEwBYPp0tX1rOU=',
+    'http://maibucket.s3.baz.com/file.t?AWSAccessKeyId=foo&Expires=1406712744&Signature=aaJJMHorwf0rUABnKFq1204gzi0=',
     'signed_url'
 );
+
+no warnings 'once';
+my $mocked_response = Mocked::HTTP::Response->new( 200,'bar' );
+*LWP::UserAgent::Determined::request = sub { $mocked_response };
+$mocked_response->{_msg} = '';
+
+ok( $file->delete,'->delete' );
+ok( $file->_get_contents,'_get_contents' );
 
 done_testing();
 

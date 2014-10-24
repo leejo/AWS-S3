@@ -2,6 +2,7 @@
 package AWS::S3::Request::ListBucket;
 
 use Moose;
+use AWS::S3::Signer;
 
 with 'AWS::S3::Roles::Request';
 

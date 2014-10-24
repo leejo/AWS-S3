@@ -2,7 +2,7 @@
 
 use strict;
 use warnings 'all';
-use Test::More 'no_plan';
+use Test::More;
 use Data::Dumper;
 use FindBin qw/ $Bin /;
 use lib "$Bin/../lib";
@@ -10,14 +10,10 @@ use lib "$Bin/../lib";
 use Carp 'confess';
 $SIG{__DIE__} = \&confess;
 
+plan skip_all => '$ENV{AWS_ACCESS_KEY_ID} && $ENV{AWS_SECRET_ACCESS_KEY} must both be defined to run this test'
+	unless( $ENV{AWS_ACCESS_KEY_ID} && $ENV{AWS_SECRET_ACCESS_KEY} );
+
 use_ok('AWS::S3');
-
-unless( $ENV{AWS_ACCESS_KEY_ID} && $ENV{AWS_SECRET_ACCESS_KEY} )
-{
-  warn '$ENV{AWS_ACCESS_KEY_ID} && $ENV{AWS_SECRET_ACCESS_KEY} must both be defined to run these tests.', "\n";
-  exit(0);
-}# end unless()
-
 
 my $s3 = AWS::S3->new(
   access_key_id     => $ENV{AWS_ACCESS_KEY_ID},
@@ -229,7 +225,7 @@ if(0) {
 }# end if()
 
 cleanup();
-
+done_testing();
 
 sub cleanup
 {
