@@ -95,6 +95,7 @@ sub new {
     return bless {
 	access_key => $id,
 	secret_key => $secret,
+       (defined($args{-security_token}) ? (security_token => $args{-security_token}) : ()),
     },ref $self || $self;
 }
 
@@ -180,13 +181,32 @@ sub signed_url {
 
     return $uri if $uri->query_param('X-Amz-Signature');
 
+
+    my $scope = $self->_scope($request);
+
     $uri->query_param('X-Amz-Algorithm'  => $self->_algorithm);
-    $uri->query_param('X-Amz-Credential' => $self->access_key . '/' . $self->_scope($request));
+    $uri->query_param('X-Amz-Credential' => $self->access_key . '/' . $scope);
     $uri->query_param('X-Amz-Date'       => $self->_datetime($request));
     $uri->query_param('X-Amz-Expires'    => $expires) if $expires;
     $uri->query_param('X-Amz-SignedHeaders' => 'host');
 
-    $self->_sign($request);
+    # If there was a security token passed, we need to supply it as part of the authorization
+    # because AWS requires it to validate IAM Role temporary credentials.
+
+    if (defined($self->{security_token})) {
+        $uri->query_param('X-Amz-Security-Token' => $self->{security_token});
+    }
+
+    # Since we're providing auth via query parameters, we need to include UNSIGNED-PAYLOAD
+    # http://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
+    # it seems to only be needed for S3.
+
+    if ($scope =~ /\/s3\/aws4_request$/) {
+        $self->_sign($request, undef, 'UNSIGNED-PAYLOAD');
+    } else {
+        $self->_sign($request);
+    }
+
     my ($algorithm,$credential,$signedheaders,$signature) =
 	$request->header('Authorization') =~ /^(\S+) Credential=(\S+), SignedHeaders=(\S+), Signature=(\S+)/;
     $uri->query_param_append('X-Amz-Signature'     => $signature);
