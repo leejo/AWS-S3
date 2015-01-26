@@ -9,7 +9,7 @@ use Digest::SHA 'sha256_hex','hmac_sha256','hmac_sha256_hex';
 use Date::Parse;
 use Carp 'croak';
 
-our $VERSION = '1.01';
+our $VERSION = '1.02';
 
 =head1 NAME
 
