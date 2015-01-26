@@ -30,9 +30,9 @@ SYNOPSIS
  use HTTP::Request::Common;
  use LWP;
 
- my $signer = AWS;:Signature4->new(-access_key => 'AKIDEXAMPLE',
+ my $signer = AWS::Signature4->new(-access_key => 'AKIDEXAMPLE',
                                    -secret_key => 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY');
- my $ua     = LW::UserAgent->new();
+ my $ua     = LWP::UserAgent->new();
 
  # Example GET request on a URI
  my $uri     = URI->new('https://iam.amazonaws.com');
