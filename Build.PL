@@ -15,6 +15,7 @@ my $build = Module::Build->new(
       'Digest::SHA'  => '5.47',
       'URI'          => 1.59,
       'URI::QueryParam' => 0,
+      'Date::Parse'  => 0,
     },
     build_class        => 'Module::Build',
     );
