@@ -21,14 +21,14 @@ AWS::Signature4 - Create a version4 signature for Amazon Web Services
  use HTTP::Request::Common;
  use LWP;
 
- my $signer = AWS;:Signature4->new(-access_key => 'AKIDEXAMPLE',
+ my $signer = AWS::Signature4->new(-access_key => 'AKIDEXAMPLE',
                                    -secret_key => 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY');
- my $ua     = LW::UserAgent->new();
+ my $ua     = LWP::UserAgent->new();
 
  # Example POST request
  my $request = POST('https://iam.amazonaws.com',
 		    [Action=>'ListUsers',
-		     Version=>'2010-05-08']));
+		     Version=>'2010-05-08']);
  $signer->sign($request);
  my $response = $ua->request($request);
 
