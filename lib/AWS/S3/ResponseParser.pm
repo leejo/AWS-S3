@@ -88,6 +88,7 @@ has 'friendly_error' => (
     default  => sub {
         my $s = shift;
 
+        $s->_parse_errors;
         return unless $s->error_code || $s->error_message;
         $s->type . " call had errors: [" . $s->error_code . "] " . $s->error_message;
     }
