@@ -181,7 +181,7 @@ sub file {
     return AWS::S3::File->new(
         bucket       => $s,
         key          => $key || undef,
-        size         => $res->header( 'content-length' ) || undef,
+        size         => $res->header( 'content-length' ) || 0,
         contenttype  => $res->header( 'content-type' ) || 'application/octet-stream',
         etag         => $res->header( 'etag' ) || undef,
         lastmodified => $res->header( 'last-modified' ) || undef,
