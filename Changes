@@ -1,6 +1,9 @@
 
 Changelog for perl module AWS::S3
 
+0.051 2015-05-23
+  - default size to 0 when not set in content-length (GH #1)
+
 0.050 2014-10-23
   New maintainer leejo
   - Add lib/AWS/S3/Request/GetPreSignedUrl.pm to MANIFEST
