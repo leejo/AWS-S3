@@ -13,7 +13,7 @@ use AWS::S3::ResponseParser;
 use AWS::S3::Owner;
 use AWS::S3::Bucket;
 
-our $VERSION = '0.051';
+our $VERSION = '0.10';
 
 has [qw/access_key_id secret_access_key/] => ( is => 'ro', isa => 'Str' );
 
@@ -301,7 +301,7 @@ L<AWS::S3::Owner>
 
 Originally John Drago C<jdrago_999@yahoo.com>, currently maintained by Lee Johnson (LEEJO) C<leejo@cpan.org>
 
-=head1 LICENSE AND COPYRIGHT
+=head1 LICENSE
 
 This software is Free software and may be used and redistributed under the same
 terms as any version of perl itself.

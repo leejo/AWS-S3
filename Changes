@@ -1,6 +1,9 @@
 
 Changelog for perl module AWS::S3
 
+0.01 2015-06-23
+  - dist changes related to kwalitee (no functional changes)
+
 0.051 2015-05-23
   - default size to 0 when not set in content-length (GH #1)
 

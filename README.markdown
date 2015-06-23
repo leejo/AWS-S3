@@ -194,7 +194,7 @@ See [AWS::S3::Bucket](https://metacpan.org/pod/AWS::S3::Bucket) for details on h
 
 Originally John Drago `jdrago_999@yahoo.com`, currently maintained by Lee Johnson (LEEJO) `leejo@cpan.org`
 
-# LICENSE AND COPYRIGHT
+# LICENSE
 
 This software is Free software and may be used and redistributed under the same
 terms as any version of perl itself.
