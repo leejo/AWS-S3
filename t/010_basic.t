@@ -141,6 +141,12 @@ if(0) {
       ok my $file = $bucket->file($key), "bucket.file($key) returned a file";
       is $file->size, length($contents), 'file.size is correct';
       is ${$file->contents}, $contents, 'file.contents is correct';
+      my $expiration_date = time() + 7 * 24 * 60 * 60;
+      my $url = $file->signed_url( $expiration_date );
+      is( $file->signed_url( $expiration_date ),$url,'signed_url same' ) for 1 .. 10;
+      my $res = $s3->ua->get( $url );
+      ok( $res->is_success,'get signed_url' );
+      isnt( $res->code,403,'not forbidden' );
       last if $counted++ > 4;
     }# end for()
     
