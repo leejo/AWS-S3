@@ -320,7 +320,10 @@ Update contents and/or contenttype of the file.
 =head2 signed_url( $expiry_time )
 
 Will return a signed URL for public access to the file. $expiry_time should be a
-Unix seconds since epoch, and will default to now + 1 hour is not passed
+Unix seconds since epoch, and will default to now + 1 hour is not passed.
+
+Note that the Signature parameter value will be URI encoded to prevent reserved
+characters (+, =, etc) causing a bad request.
 
 =head1 SEE ALSO
 

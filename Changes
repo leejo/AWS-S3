@@ -1,7 +1,10 @@
 
 Changelog for perl module AWS::S3
 
-0.01 2015-06-23
+0.11 2015-08-31
+  - Fix signed_url to URI escape the Signature param value (GH #3)
+
+0.10 2015-06-23
   - dist changes related to kwalitee (no functional changes)
 
 0.051 2015-05-23

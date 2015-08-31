@@ -87,7 +87,7 @@ ok( $file->update( contents => \'new contents' ),'update with args' );
 
 is(
     $file->signed_url( 1406712744 ),
-    'http://maibucket.s3.baz.com/file.t?AWSAccessKeyId=foo&Expires=1406712744&Signature=aaJJMHorwf0rUABnKFq1204gzi0=',
+    'http://maibucket.s3.baz.com/file.t?AWSAccessKeyId=foo&Expires=1406712744&Signature=aaJJMHorwf0rUABnKFq1204gzi0%3D',
     'signed_url'
 );
 

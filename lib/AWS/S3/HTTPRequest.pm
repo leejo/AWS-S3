@@ -5,11 +5,6 @@ use Moose;
 use Moose::Util::TypeConstraints;
 use AWS::S3::Signer;
 
-use Carp 'confess';
-use HTTP::Date 'time2str';
-use MIME::Base64 qw(encode_base64);
-use URI::Escape qw(uri_escape_utf8);
-use Digest::HMAC_SHA1;
 use HTTP::Headers;
 use URI;
 
@@ -103,12 +98,6 @@ sub http_request {
 
     my $request = HTTP::Request->new( $method, $uri, $headers, $content );
 
-    if ( $uri =~ m{location} && 1 || $method eq 'PUT' ) {
-
-        #  warn "StringToSign(" . $signer->string_to_sign . ")";
-        #  warn "canonicalized_amz_headers(" . $signer->canonicalized_amz_headers . ")";
-        #  warn "Request(" . $request->as_string . ")";
-    }    # end if()
     return $request;
 }    # end http_request()
 

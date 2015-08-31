@@ -3,6 +3,7 @@ package AWS::S3::Request::GetPreSignedUrl;
 use Moose;
 
 use AWS::S3::Signer;
+use URI::Escape qw(uri_escape);
 
 with 'AWS::S3::Roles::Request';
 
@@ -30,7 +31,7 @@ sub request {
     my $signed_uri = $uri->as_string
         . '?AWSAccessKeyId=' . $s->s3->access_key_id
         . '&Expires=' . $s->expires
-        . '&Signature=' . $signer->signature;
+        . '&Signature=' . uri_escape( $signer->signature );
 
     return $signed_uri;
 }
