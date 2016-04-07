@@ -40,7 +40,7 @@ use_ok('AWS::S3::Request::SetFileContents');
 
 monkey_patch_module();
 
-my $key = $ENV{AWS_TEST_KEY} // "my image.jpg";
+my $key = $ENV{AWS_TEST_KEY} // "my+image.jpg";
 
 isa_ok(
     my $file = AWS::S3::File->new(
@@ -89,7 +89,7 @@ ok( $file->update( contents => \'new contents' ),'update with args' );
 
 is(
     $file->signed_url( 1406712744 ),
-    'http://maibucket.s3.baz.com/' . uri_escape( $key ) . '?AWSAccessKeyId=foo&Expires=1406712744&Signature=Ruq0HGGSEj0vfI%2F1GNe8goS7ivc%3D',
+    'http://maibucket.s3.baz.com/' . uri_escape( $key ) . '?AWSAccessKeyId=foo&Expires=1406712744&Signature=myRFkoQ7r8gkojwBQ8%2FSIXv7iXk%3D',
     'signed_url'
 );
 

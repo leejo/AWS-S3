@@ -101,8 +101,12 @@ sub http_request {
     return $request;
 }    # end http_request()
 
-# XXX: Not needed by us...
-sub _is_dns_bucket { 1 }
+sub _is_dns_bucket {
+    my ( $self,$bucket ) = @_;
+    # DNS bucket names can contain lowercase letters, numbers, and hyphens
+    # so anything outside this range we say isn't a valid DNS bucket
+    return $bucket =~ /[^a-z0-9-]/ ? 0 : 1;
+}
 
 __PACKAGE__->meta->make_immutable;
 

@@ -49,6 +49,10 @@ TODO: {
 	$@ && diag( "TODO: $TODO" );
 }
 
-is( $request->_is_dns_bucket,1,'_is_dns_bucket' );
+is( $request->_is_dns_bucket( 'foo' ),1,'_is_dns_bucket' );
+is( $request->_is_dns_bucket( 'Foo' ),0,'_! is_dns_bucket' );
+is( $request->_is_dns_bucket( 'bar123boz' ),1,'_is_dns_bucket' );
+is( $request->_is_dns_bucket( 'bar123Boz' ),0,'! _is_dns_bucket' );
+is( $request->_is_dns_bucket( 'foo!' ),0,'! _is_dns_bucket' );
 
 done_testing();
