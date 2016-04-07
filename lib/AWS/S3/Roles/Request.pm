@@ -3,6 +3,7 @@ use Moose::Role;
 use HTTP::Request;
 use AWS::S3::ResponseParser;
 use MooseX::Types::URI qw(Uri);
+use URI::Escape qw/ uri_escape /;
 
 has 's3' => (
     is       => 'ro',
@@ -59,7 +60,7 @@ has '_uri' => (
             . '/'
         );
 
-        $uri->path( $self->key )
+        $uri->path( uri_escape( $self->key ) )
           if $m->has_attribute('key');
 
         $uri->query_keywords( $self->_subresource )

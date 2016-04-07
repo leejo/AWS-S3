@@ -101,8 +101,17 @@ sub http_request {
     return $request;
 }    # end http_request()
 
-# XXX: Not needed by us...
-sub _is_dns_bucket { 1 }
+sub _is_dns_bucket {
+    my ( $self,$bucket ) = @_;
+
+    # https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
+    return 0 if ( length( $bucket ) < 3 or length( $bucket ) > 63 );
+    return 0 if $bucket =~ /^(?:\d{1,3}\.){3}\d{1,3}$/;
+
+    # DNS bucket names can contain lowercase letters, numbers, and hyphens
+    # so anything outside this range we say isn't a valid DNS bucket
+    return $bucket =~ /[^a-z0-9-\.]/ ? 0 : 1;
+}
 
 __PACKAGE__->meta->make_immutable;
 

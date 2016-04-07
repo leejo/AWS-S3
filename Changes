@@ -1,6 +1,10 @@
 
 Changelog for perl module AWS::S3
 
+0.12 2016-03-07
+  - Fix DNS bucket name checking for non-valid DNS bucket nams (GH #4)
+  - Fix URI escaping for filenames to avoid infinite loop on spaces (GH #5)
+
 0.11 2015-08-31
   - Fix signed_url to URI escape the Signature param value (GH #3)
 
