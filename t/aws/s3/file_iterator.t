@@ -77,7 +77,7 @@ __DATA__
     <MaxKeys>1000</MaxKeys>
     <IsTruncated>false</IsTruncated>
     <Contents>
-        <Key>my-image.jpg</Key>
+        <Key>my image.jpg</Key>
         <LastModified>2009-10-12T17:50:30.000Z</LastModified>
         <ETag>&quot;fba9dede5f27731c9771645a39863328&quot;</ETag>
         <Size>434234</Size>
