@@ -20,7 +20,7 @@ package main;
 
 use Test::More;
 use Test::Deep;
-use URI::Encode qw/ uri_encode /;
+use URI::Escape qw/ uri_escape /;
 
 use Carp 'confess';
 $SIG{__DIE__} = \&confess;
@@ -89,7 +89,7 @@ ok( $file->update( contents => \'new contents' ),'update with args' );
 
 is(
     $file->signed_url( 1406712744 ),
-    'http://maibucket.s3.baz.com/' . uri_encode( $key ) . '?AWSAccessKeyId=foo&Expires=1406712744&Signature=Ruq0HGGSEj0vfI%2F1GNe8goS7ivc%3D',
+    'http://maibucket.s3.baz.com/' . uri_escape( $key ) . '?AWSAccessKeyId=foo&Expires=1406712744&Signature=Ruq0HGGSEj0vfI%2F1GNe8goS7ivc%3D',
     'signed_url'
 );
 

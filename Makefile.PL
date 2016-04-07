@@ -27,7 +27,6 @@ WriteMakefile(
         'Iterator::Paged'            => 0,
         'Test::Deep'                 => 0,
         'JSON::XS'                   => 0,
-        'URI::Encode'                => 0,
       },
     BUILD_REQUIRES => {
         'Test::More'       => 0.31,
