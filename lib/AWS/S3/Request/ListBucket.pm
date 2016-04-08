@@ -3,8 +3,10 @@ package AWS::S3::Request::ListBucket;
 
 use Moose;
 use AWS::S3::Signer;
+use URI::Escape qw/ uri_escape /;
 
 with 'AWS::S3::Roles::Request';
+with 'AWS::S3::Roles::Bucket';
 
 has 'bucket' => (
     is       => 'ro',
@@ -43,13 +45,16 @@ sub request {
 
     my @params = ();
     push @params, 'max-keys=' . $s->max_keys;
-    push @params, 'marker=' . $s->marker if $s->marker;
+    push @params, 'marker=' . uri_escape( $s->marker ) if $s->marker;
     push @params, 'prefix=' . $s->prefix if $s->prefix;
     push @params, 'delimiter=' . $s->delimiter if $s->delimiter;
+
+    my $uri = $s->bucket_uri;
+
     my $signer = AWS::S3::Signer->new(
         s3     => $s->s3,
         method => 'GET',
-        uri => $s->protocol . '://' . $s->bucket . '.' . $s->endpoint . '/' . ( @params ? '?' . join( '&', @params ) : '' ),
+        uri    => $uri . '/' . ( @params ? '?' . join( '&', @params ) : '' ),
     );
     $s->_send_request(
         $signer->method => $signer->uri => {

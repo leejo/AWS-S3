@@ -8,6 +8,8 @@ use AWS::S3::Signer;
 use HTTP::Headers;
 use URI;
 
+with 'AWS::S3::Roles::Bucket';
+
 my $METADATA_PREFIX      = 'x-amz-meta-';
 my $AMAZON_HEADER_PREFIX = 'x-amz-';
 
@@ -70,17 +72,11 @@ has 'contenttype' => (
 sub http_request {
     my $s        = shift;
     my $method   = $s->method;
-    my $path     = $s->path;
     my $headers  = $s->headers;
     my $content  = $s->content;
     my $metadata = $s->metadata;
 
-    my $protocol = $s->s3->secure ? 'https' : 'http';
-	my $endpoint = $s->s3->endpoint;
-    my $uri = "$protocol://$endpoint/$path";
-    if ( $path =~ m{^([^/?]+)(.*)} && _is_dns_bucket( $1 ) ) {
-        $uri = "$protocol://$1.$endpoint$2";
-    }    # end if()
+    my $uri = $s->bucket_uri;
 
     my $signer = AWS::S3::Signer->new(
         s3      => $s->s3,
@@ -100,18 +96,6 @@ sub http_request {
 
     return $request;
 }    # end http_request()
-
-sub _is_dns_bucket {
-    my ( $self,$bucket ) = @_;
-
-    # https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
-    return 0 if ( length( $bucket ) < 3 or length( $bucket ) > 63 );
-    return 0 if $bucket =~ /^(?:\d{1,3}\.){3}\d{1,3}$/;
-
-    # DNS bucket names can contain lowercase letters, numbers, and hyphens
-    # so anything outside this range we say isn't a valid DNS bucket
-    return $bucket =~ /[^a-z0-9-\.]/ ? 0 : 1;
-}
 
 __PACKAGE__->meta->make_immutable;
 

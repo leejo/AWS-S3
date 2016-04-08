@@ -25,6 +25,7 @@ lib/AWS/S3/Request/SetBucketPolicy.pm
 lib/AWS/S3/Request/SetFileContents.pm
 lib/AWS/S3/ResponseParser.pm
 lib/AWS/S3/Roles/BucketAction.pm
+lib/AWS/S3/Roles/Bucket.pm
 lib/AWS/S3/Roles/Request.pm
 lib/AWS/S3/Signer.pm
 t/001_compiles_pod.t
