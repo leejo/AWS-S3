@@ -3,9 +3,9 @@ package AWS::S3::Roles::Bucket;
 use Moose::Role;
 
 sub bucket_uri {
-    my ( $s ) = @_;
+    my ( $s,$path ) = @_;
 
-    my $path     = $s->bucket;
+    $path      //= $s->bucket;
     my $protocol = $s->s3->secure ? 'https' : 'http';
     my $endpoint = $s->s3->endpoint;
     my $uri = "$protocol://$endpoint/$path";

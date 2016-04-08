@@ -76,7 +76,7 @@ sub http_request {
     my $content  = $s->content;
     my $metadata = $s->metadata;
 
-    my $uri = $s->bucket_uri;
+    my $uri = $s->bucket_uri( $s->path );
 
     my $signer = AWS::S3::Signer->new(
         s3      => $s->s3,
