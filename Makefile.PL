@@ -21,6 +21,7 @@ WriteMakefile(
         'LWP::UserAgent::Determined' => 0,
         'Carp'                       => 0,
         'HTTP::Date'                 => 0,
+        'HTTP::Headers'              => 6.07,
         'MIME::Base64'               => 0,
         'URI::Escape'                => 0,
         'Digest::HMAC_SHA1'          => 0,

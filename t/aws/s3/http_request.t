@@ -43,11 +43,7 @@ can_ok(
     /,
 );
 
-TODO: {
-	local $TODO = "contradiction in headers types on default";
-	eval { isa_ok( $request->http_request,'HTTP::Request' ) };
-	$@ && diag( "TODO: $TODO" );
-}
+isa_ok( $request->http_request,'HTTP::Request' );
 
 is( $request->is_dns_bucket( 'foo' ),1,'_is_dns_bucket' );
 is( $request->is_dns_bucket( 'Foo' ),0,'_! is_dns_bucket' );
