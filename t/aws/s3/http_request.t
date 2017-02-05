@@ -55,4 +55,20 @@ is( $request->is_dns_bucket( 'fo' ),0,'! _is_dns_bucket' );
 is( $request->is_dns_bucket( 'x' x 64 ),0,'! _is_dns_bucket' );
 is( $request->is_dns_bucket( 'x' x 63 ),1,'_is_dns_bucket' );
 
+isa_ok(
+    my $request_with_content = AWS::S3::HTTPRequest->new(
+        s3      => $s3,
+        method  => 'POST',
+        path    => '/bar/baz',
+        content => 'Hello World!'
+    ),
+    'AWS::S3::HTTPRequest'
+);
+
+isa_ok( my $http_request_with_content = $request_with_content->http_request, 'HTTP::Request' );
+my $header = $http_request_with_content->headers;
+is( $header->header( 'content-type' ), 'text/plain', '... and content-type got set' );
+is( $header->header( 'content-length' ), 12, '... and content-length got set' );
+is( $header->header( 'host' ), 's3.baz.com', '... and host got set' );
+
 done_testing();
