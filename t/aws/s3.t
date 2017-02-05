@@ -17,6 +17,7 @@ package main;
 use Test::More 'no_plan';
 use Test::MockObject;
 use Test::Deep;
+use Test::Exception;
 use Data::Section::Simple 'get_data_section';
 
 use Carp 'confess';
@@ -112,17 +113,16 @@ subtest 'create bucket strange temporary redirect' => sub {
     is( $s3->bucket( 'foo' )->name, 'foo', '->bucket' );
 }
 
-#{
-#    my $xml = get_data_section('error.xml');
-#
-#    no warnings 'redefine';
-#    *LWP::UserAgent::Determined::request = sub {
-#        return Mocked::HTTP::Response->new( 404,$xml );
-#    };
-#
-#    my $bucket = $s3->buckets;
-#    ok( ! $bucket, '!->bucket' );
-#}
+{
+    my $xml = get_data_section('error.xml');
+
+    local *LWP::UserAgent::Determined::request = sub {
+        return Mocked::HTTP::Response->new( 400,$xml );
+    };
+
+    throws_ok { $s3->add_bucket( name => 'too many buckets', location => 'us-west-1' ) }
+    qr/TooManyBuckets/, 'add_bucket throws an error';
+}
 __DATA__
 @@ ListAllMyBucketsResult.xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -145,8 +145,8 @@ __DATA__
 @@ error.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <Error>
-  <Code>NoSuchBucket</Code>
-  <Message>The specified bucket does not exist.</Message>
+  <Code>TooManyBuckets</Code>
+  <Message>You have attempted to create more buckets than allowed.</Message>
   <Resource>/mybucket</Resource>
   <RequestId>4442587FB7D0A2F9</RequestId>
 </Error>
