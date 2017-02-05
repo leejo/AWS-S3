@@ -32,7 +32,6 @@ WriteMakefile(
     BUILD_REQUIRES => {
         'Test::More'       => 0.31,
         'Test::Deep'       => 0.112,
-        'Test::MockObject' => 1.20140408,
         'Test::Exception'  => 0.32,
         'Data::Section::Simple' => 0,
     },

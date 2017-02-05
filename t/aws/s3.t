@@ -15,7 +15,6 @@ sub content { return shift->{_msg}; }
 package main;
 
 use Test::More 'no_plan';
-use Test::MockObject;
 use Test::Deep;
 use Test::Exception;
 use Data::Section::Simple 'get_data_section';
