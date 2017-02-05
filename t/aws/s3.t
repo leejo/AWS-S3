@@ -47,19 +47,70 @@ isa_ok(
 	'AWS::S3::Request::CreateBucket'
 );
 
-my $xml = get_data_section('ListAllMyBucketsResult.xml');
+subtest 'create bucket strange temporary redirect' => sub {
+    plan tests => 8;    # make sure all tests in here get run
 
-no warnings 'once';
-*LWP::UserAgent::Determined::request = sub {
-    return Mocked::HTTP::Response->new( 200,$xml );
+    my $i = 1;
+    local *LWP::UserAgent::Determined::request = sub {
+        my ( undef, $req ) = @_;
+
+        if ( $i == 1 ) {
+
+            # first PUT request, send a forward
+            is( $req->method, 'PUT', 'bucket creation with PUT request' );
+            is( $req->uri->as_string, 'http://bar.bad.hostname/', '... and with correct URI' );
+
+            $i++;
+            return HTTP::Response->new(
+                307,
+                'TEMPORARY REDIRECT',
+                [ Location => 'http://example.org' ],
+                '<fake>TemporaryRedirect</fake>'
+            );
+        }
+        elsif ( $i == 2 ) {
+
+            # the PUT is sent again, but to the forwarded location
+
+            is( $req->method, 'PUT', 'redirected and second PUT request' );
+            is( $req->uri->as_string, 'http://example.org', '... and to the correct URI' );
+
+            $i++;
+            return Mocked::HTTP::Response->new( 200, q{} );
+        }
+        else {
+            # there is a call to ->bucket, which does ->buckets, which is empty.
+            is( $req->method, 'GET', '->buckets with GET' );
+            is( $req->uri->as_string, 'http://bad.hostname/', '... and with correct URI' );
+
+            # we need to return XML in the body or xpc doesn't work
+            return Mocked::HTTP::Response->new( 200,
+                get_data_section('ListAllMyBucketsResult.xml') );
+        }
+    };
+
+    my $bucket = $s3->add_bucket( name => 'bar', location => 'us-west-1' );
+    isa_ok( $bucket, 'AWS::S3::Bucket' );
+    is( $bucket->name, 'bar', '... and the right bucket got returned' );
 };
-isa_ok( $s3->owner,'AWS::S3::Owner' );
 
-my @buckets = $s3->buckets;
-cmp_deeply( \@buckets,
-    [ obj_isa('AWS::S3::Bucket'), obj_isa('AWS::S3::Bucket') ], '->buckets' );
-ok( ! $s3->bucket( 'does not exist' ),'!->bucket' );
-is( $s3->bucket( 'foo' )->name, 'foo', '->bucket' );
+# list all buckets and owner
+{
+    my $xml = get_data_section('ListAllMyBucketsResult.xml');
+    local *LWP::UserAgent::Determined::request = sub {
+        return Mocked::HTTP::Response->new( 200,$xml );
+    };
+
+    isa_ok( my $owner = $s3->owner,'AWS::S3::Owner' );
+    is( $owner->id, 'bcaf1ffd86f41161ca5fb16fd081034f', '... and the owner id correct' );
+    is( $owner->display_name, 'webfile', '... and the owner name is correct' );
+
+    my @buckets = $s3->buckets;
+    cmp_deeply( \@buckets,
+        [ obj_isa('AWS::S3::Bucket'), obj_isa('AWS::S3::Bucket') ], '->buckets' );
+    ok( ! $s3->bucket( 'does not exist' ),'!->bucket' );
+    is( $s3->bucket( 'foo' )->name, 'foo', '->bucket' );
+}
 
 #{
 #    my $xml = get_data_section('error.xml');
