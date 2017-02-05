@@ -34,6 +34,7 @@ WriteMakefile(
         'Test::Deep'       => 0.112,
         'Test::MockObject' => 1.20140408,
         'Test::Exception'  => 0.32,
+        'Data::Section::Simple' => 0,
     },
     META_MERGE => {
         resources => {
