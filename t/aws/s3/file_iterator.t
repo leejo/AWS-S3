@@ -16,6 +16,7 @@ sub header         { $_[1] =~ /content-length/i ? 1 : 'header' }
 
 1;
 
+package main;
 use Test::More;
 use FindBin qw/ $Script /;
 
@@ -39,7 +40,6 @@ isa_ok(
     ),
     'AWS::S3::Bucket'
 );
-
 
 isa_ok(
 	my $iterator = AWS::S3::FileIterator->new(

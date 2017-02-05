@@ -16,6 +16,7 @@ sub header         { $_[1] =~ /content-length/i ? 1 : 'header' }
 
 1;
 
+package main;
 use Test::More;
 use Test::Exception;
 use FindBin qw/ $Script /;
