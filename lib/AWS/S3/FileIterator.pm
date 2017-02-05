@@ -27,6 +27,7 @@ sub marker    { shift->{marker} }
 sub pattern   { shift->{pattern} }
 sub bucket    { shift->{bucket} }
 sub page_size { shift->{page_size} }
+sub prefix    { shift->{prefix} }
 
 sub has_prev {
     my $s = shift;
@@ -171,7 +172,8 @@ AWS::S3::FileIterator - Easily access and iterate through your S3 files.
     page_size   => 100,
     page_number => 1,
     # Optional params:
-    pattern     => qr(\.txt$)
+    pattern     => qr(\.txt$),
+    prefix      => 'notes',
   );
   
   while( my @files = $iter->next_page )
@@ -203,7 +205,7 @@ Boolean - read-only
 
 =head2 page_number
 
-Integer -  read-write
+Integer - read-write
 
 =head2 marker
 
@@ -216,6 +218,12 @@ Used internally to tell Amazon S3 where the last request for a listing of files 
 Regexp - read-only
 
 If supplied to the constructor, only files which match the pattern will be returned.
+
+=head2 prefix
+
+String - read-only
+
+If supplied to the constructor, only files which begin with the indicated prefix will be returned.
 
 =head1 PUBLIC METHODS
 

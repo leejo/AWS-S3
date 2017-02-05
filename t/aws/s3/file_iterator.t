@@ -62,6 +62,7 @@ foreach my $args (
             page_number => 2,
             page_size   => 1,
             bucket      => $bucket,
+            prefix      => 'img',
         ),
         'AWS::S3::FileIterator'
     );
@@ -74,6 +75,7 @@ foreach my $args (
     is( $iterator->has_next,undef,'has_next' );
     is( $iterator->page_number,1,'get page_number' );
     is( $iterator->page_number(1),0,'set page_number' );
+    is( $iterator->prefix,'img','prefix' );
 
     {
         my $iterator2 = AWS::S3::FileIterator->new(
@@ -85,6 +87,7 @@ foreach my $args (
         );
         is( $iterator2->marker,'foo','marker passed');
         is( $iterator2->pattern,qr/\d/,'pattern passed');
+        is( $iterator2->prefix,undef,'!prefix' );
     }
 
     my $mocked_response = Mocked::HTTP::Response->new( 200,get_data_section('ListBucketResult.xml') );
@@ -92,9 +95,9 @@ foreach my $args (
     
     my @pages = $iterator->next_page; # to check wantarray
     cmp_deeply( \@pages,[ obj_isa('AWS::S3::File') ],'next_page returns one ::File' );
-    is( $pages[0]->key,'my image.jpg','... and it is the one expected' );
-    is( $iterator->next_page->[0]->key,'my-third-image.jpg','next_page second item' );
-    is( $iterator->next_page->[0]->key,'my image.jpg','next_page new request, first item' );
+    is( $pages[0]->key,'img/my image.jpg','... and it is the one expected' );
+    is( $iterator->next_page->[0]->key,'img/my-third-image.jpg','next_page second item' );
+    is( $iterator->next_page->[0]->key,'img/my image.jpg','next_page new request, first item' );
 
     $mocked_response = Mocked::HTTP::Response->new( 200,get_data_section('EmptyResult') );
     ok( $iterator->next_page,'next_page second item' );
@@ -130,12 +133,12 @@ __DATA__
 <?xml version="1.0" encoding="UTF-8"?>
 <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
     <Name>bucket</Name>
-    <Prefix/>
+    <Prefix>img</Prefix>
     <Marker/>
     <MaxKeys>1000</MaxKeys>
     <IsTruncated>false</IsTruncated>
     <Contents>
-        <Key>my image.jpg</Key>
+        <Key>img/my image.jpg</Key>
         <LastModified>2009-10-12T17:50:30.000Z</LastModified>
         <ETag>&quot;fba9dede5f27731c9771645a39863328&quot;</ETag>
         <Size>434234</Size>
@@ -146,7 +149,7 @@ __DATA__
         </Owner>
     </Contents>
     <Contents>
-       <Key>my-third-image.jpg</Key>
+       <Key>img/my-third-image.jpg</Key>
          <LastModified>2009-10-12T17:50:30.000Z</LastModified>
         <ETag>&quot;1b2cf535f27731c974343645a3985328&quot;</ETag>
         <Size>64994</Size>
