@@ -71,7 +71,7 @@ has 'xpc' => (
 
         my $src = $self->response->content;
         return unless $src =~ m/^[[:space:]]*</s;
-        my $doc = $self->libxml->parse_string( $self->response->content );
+        my $doc = $self->libxml->parse_string( $src );
 
         my $xpc = XML::LibXML::XPathContext->new( $doc );
         $xpc->registerNs( 's3', 'http://s3.amazonaws.com/doc/2006-03-01/' );

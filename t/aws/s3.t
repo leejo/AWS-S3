@@ -15,8 +15,9 @@ sub content { return shift->{_msg}; }
 package main;
 
 use Test::More 'no_plan';
-use Test::MockObject;
 use Test::Deep;
+use Test::Exception;
+use Data::Section::Simple 'get_data_section';
 
 use Carp 'confess';
 $SIG{__DIE__} = \&confess;
@@ -46,47 +47,105 @@ isa_ok(
 	'AWS::S3::Request::CreateBucket'
 );
 
-my $xml = do { local $/; <DATA> };
+subtest 'create bucket strange temporary redirect' => sub {
+    plan tests => 8;    # make sure all tests in here get run
 
-no warnings 'once';
-*LWP::UserAgent::Determined::request = sub {
-	return Mocked::HTTP::Response->new( 200,$xml );
+    my $i = 1;
+    local *LWP::UserAgent::Determined::request = sub {
+        my ( undef, $req ) = @_;
+
+        if ( $i == 1 ) {
+
+            # first PUT request, send a forward
+            is( $req->method, 'PUT', 'bucket creation with PUT request' );
+            is( $req->uri->as_string, 'http://bar.bad.hostname/', '... and with correct URI' );
+
+            $i++;
+            return HTTP::Response->new(
+                307,
+                'TEMPORARY REDIRECT',
+                [ Location => 'http://example.org' ],
+                '<fake>TemporaryRedirect</fake>'
+            );
+        }
+        elsif ( $i == 2 ) {
+
+            # the PUT is sent again, but to the forwarded location
+
+            is( $req->method, 'PUT', 'redirected and second PUT request' );
+            is( $req->uri->as_string, 'http://example.org', '... and to the correct URI' );
+
+            $i++;
+            return Mocked::HTTP::Response->new( 200, q{} );
+        }
+        else {
+            # there is a call to ->bucket, which does ->buckets, which is empty.
+            is( $req->method, 'GET', '->buckets with GET' );
+            is( $req->uri->as_string, 'http://bad.hostname/', '... and with correct URI' );
+
+            # we need to return XML in the body or xpc doesn't work
+            return Mocked::HTTP::Response->new( 200,
+                get_data_section('ListAllMyBucketsResult.xml') );
+        }
+    };
+
+    my $bucket = $s3->add_bucket( name => 'bar', location => 'us-west-1' );
+    isa_ok( $bucket, 'AWS::S3::Bucket' );
+    is( $bucket->name, 'bar', '... and the right bucket got returned' );
 };
 
-isa_ok( $s3->owner,'AWS::S3::Owner' );
+# list all buckets and owner
+{
+    my $xml = get_data_section('ListAllMyBucketsResult.xml');
+    local *LWP::UserAgent::Determined::request = sub {
+        return Mocked::HTTP::Response->new( 200,$xml );
+    };
 
-my @buckets = $s3->buckets;
-cmp_deeply( \@buckets,[],'->buckets' );
-ok( ! $s3->bucket( 'maibucket'),'->bucket' );
+    isa_ok( my $owner = $s3->owner,'AWS::S3::Owner' );
+    is( $owner->id, 'bcaf1ffd86f41161ca5fb16fd081034f', '... and the owner id correct' );
+    is( $owner->display_name, 'webfile', '... and the owner name is correct' );
 
+    my @buckets = $s3->buckets;
+    cmp_deeply( \@buckets,
+        [ obj_isa('AWS::S3::Bucket'), obj_isa('AWS::S3::Bucket') ], '->buckets' );
+    ok( ! $s3->bucket( 'does not exist' ),'!->bucket' );
+    is( $s3->bucket( 'foo' )->name, 'foo', '->bucket' );
+}
+
+{
+    my $xml = get_data_section('error.xml');
+
+    local *LWP::UserAgent::Determined::request = sub {
+        return Mocked::HTTP::Response->new( 400,$xml );
+    };
+
+    throws_ok { $s3->add_bucket( name => 'too many buckets', location => 'us-west-1' ) }
+    qr/TooManyBuckets/, 'add_bucket throws an error';
+}
 __DATA__
+@@ ListAllMyBucketsResult.xml
 <?xml version="1.0" encoding="UTF-8"?>
-<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-    <Name>bucket</Name>
-    <Prefix/>
-    <Marker/>
-    <MaxKeys>1000</MaxKeys>
-    <IsTruncated>false</IsTruncated>
-    <Contents>
-        <Key>my-image.jpg</Key>
-        <LastModified>2009-10-12T17:50:30.000Z</LastModified>
-        <ETag>&quot;fba9dede5f27731c9771645a39863328&quot;</ETag>
-        <Size>434234</Size>
-        <StorageClass>STANDARD</StorageClass>
-        <Owner>
-            <ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID>
-            <DisplayName>mtd@amazon.com</DisplayName>
-        </Owner>
-    </Contents>
-    <Contents>
-       <Key>my-third-image.jpg</Key>
-         <LastModified>2009-10-12T17:50:30.000Z</LastModified>
-        <ETag>&quot;1b2cf535f27731c974343645a3985328&quot;</ETag>
-        <Size>64994</Size>
-        <StorageClass>STANDARD</StorageClass>
-        <Owner>
-            <ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID>
-            <DisplayName>mtd@amazon.com</DisplayName>
-        </Owner>
-    </Contents>
-</ListBucketResult>
+<ListAllMyBucketsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+  <Owner>
+    <ID>bcaf1ffd86f41161ca5fb16fd081034f</ID>
+    <DisplayName>webfile</DisplayName>
+  </Owner>
+  <Buckets>
+    <Bucket>
+      <Name>foo</Name>
+      <CreationDate>2006-02-03T16:45:09.000Z</CreationDate>
+    </Bucket>
+    <Bucket>
+      <Name>bar</Name>
+      <CreationDate>2006-02-03T16:41:58.000Z</CreationDate>
+    </Bucket>
+ </Buckets>
+</ListAllMyBucketsResult>
+@@ error.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Error>
+  <Code>TooManyBuckets</Code>
+  <Message>You have attempted to create more buckets than allowed.</Message>
+  <Resource>/mybucket</Resource>
+  <RequestId>4442587FB7D0A2F9</RequestId>
+</Error>

@@ -10,12 +10,12 @@ extends 'HTTP::Response';
 
 sub content        { shift->{_msg}; }
 sub code           { 200 }
-sub friendly_error {}
 sub is_success     { 1 }
 sub header         { $_[1] =~ /content-length/i ? 1 : 'header' }
 
 1;
 
+package main;
 use Test::More;
 use Test::Exception;
 use FindBin qw/ $Script /;

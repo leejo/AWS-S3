@@ -21,6 +21,7 @@ WriteMakefile(
         'LWP::UserAgent::Determined' => 0,
         'Carp'                       => 0,
         'HTTP::Date'                 => 0,
+        'HTTP::Headers'              => 6.07,
         'MIME::Base64'               => 0,
         'URI::Escape'                => 0,
         'Digest::HMAC_SHA1'          => 0,
@@ -31,8 +32,8 @@ WriteMakefile(
     BUILD_REQUIRES => {
         'Test::More'       => 0.31,
         'Test::Deep'       => 0.112,
-        'Test::MockObject' => 1.20140408,
         'Test::Exception'  => 0.32,
+        'Data::Section::Simple' => 0,
     },
     META_MERGE => {
         resources => {

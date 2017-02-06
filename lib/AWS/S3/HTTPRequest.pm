@@ -83,7 +83,7 @@ sub http_request {
         method  => $method,
         uri     => $uri,
         content => $content ? \$content : undef,
-        headers => $headers,
+        headers => [ $headers->flatten ],
     );
 
     $headers->header( 'Authorization'  => $signer->auth_header );
