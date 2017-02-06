@@ -60,7 +60,9 @@ has '_uri' => (
             . '/'
         );
 
-        $uri->path( uri_escape( $self->key ) )
+		# note we add some extra exceptions to uri_escape to prevent
+		# encoding of things like "/", ":", "="
+        $uri->path( uri_escape( $self->key,"^A-Za-z0-9\-\._~\/:=" ) )
           if $m->has_attribute('key');
 
         $uri->query_keywords( $self->_subresource )

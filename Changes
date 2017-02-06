@@ -1,7 +1,10 @@
 
 Changelog for perl module AWS::S3
 
-  - hidden parameter 'prefix' for AWS::S3::FileIterator is now documented
+0.13 2017-02-06
+  - Add documentation for parameter 'prefix' for AWS::S3::FileIterator
+  - Add test coverage (GH #8, thanks to simbabque for these changes)
+  - Fix over encoding of characters in path (GH #6)
 
 0.12 2016-03-07
   - Fix DNS bucket name checking for non-valid DNS bucket nams (GH #4)
