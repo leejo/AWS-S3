@@ -193,6 +193,7 @@ See [AWS::S3::Bucket](https://metacpan.org/pod/AWS::S3::Bucket) for details on h
 # AUTHOR
 
 Originally John Drago `jdrago_999@yahoo.com`, currently maintained by Lee Johnson (LEEJO) `leejo@cpan.org`
+with contributions from Evan Carroll, Robin Clarke, Ulrich Kautz, simbabque
 
 # LICENSE
 
