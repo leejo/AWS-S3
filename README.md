@@ -44,6 +44,8 @@ SYNOPSIS
 
  $time_limited_url = $signer->signed_url($uri,60*60); # This gives a signed URL valid for one hour
 
+ $signed_head_req = $signer->signed_url($uri,60*60, 'HEAD'); # This gives a signed URL valid for one hour
+
  # Example POST request
  my $request = POST('https://iam.amazonaws.com',
 		    [Action=>'ListUsers',
