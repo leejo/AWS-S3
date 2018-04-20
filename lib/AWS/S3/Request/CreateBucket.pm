@@ -34,8 +34,6 @@ sub request {
 XML
     }
 
-    print $xml;
-
     my $signer = AWS::S3::Signer->new(
         s3           => $s->s3,
         method       => 'PUT',
