@@ -8,6 +8,7 @@ use URI::Escape;
 use Digest::SHA 'sha256_hex','hmac_sha256','hmac_sha256_hex';
 use Date::Parse;
 use Carp 'croak';
+use HTTP::Request;
 
 our $VERSION = '1.02';
 
@@ -142,7 +143,7 @@ sub sign {
     $self->_sign($request,$region,$payload_sha256_hex);
 }
 
-=item my $url $signer->signed_url($request_or_uri [,$expires])
+=item my $url $signer->signed_url($request_or_uri [,$expires] [,$verb])
 
 Pass an HTTP::Request, a URI object, or just a plain URL string
 containing the proper endpoint and parameters needed for an AWS REST
@@ -154,63 +155,77 @@ Pass an optional $expires argument to indicate that the URL will only
 be valid for a finite period of time. The value of the argument is in
 seconds.
 
+Pass an optional verb which is useful for HEAD requests, this defaults to GET.
+
 =cut
 
 
 sub signed_url {
-    my $self    = shift;
-    my ($arg1,$expires) = @_;
-    
-    my ($request,$uri);
+  my $self    = shift;
+  my ($arg1,$expires, $verb) = @_;
+  my ($request,$uri);
 
-    if (ref $arg1 && UNIVERSAL::isa($arg1,'HTTP::Request')) {
-	$request = $arg1;
-	$uri = $request->uri;
-	my $content = $request->content;
-	$uri->query($content) if $content;
-	if (my $date = $request->header('X-Amz-Date') || $request->header('Date')) {
-	    $uri->query_param('Date'=>$date);
-	}
-    }
+  $verb ||= 'GET';
+  $verb = uc($verb);
 
-    $uri ||= URI->new($arg1);
-    my $date = $uri->query_param_delete('Date') || $uri->query_param_delete('X-Amz-Date');
-    $request = HTTP::Request->new(GET=>$uri);
-    $request->header('Date'=> $date);
-    $uri = $request->uri;  # because HTTP::Request->new() copies the uri!
-
-    return $uri if $uri->query_param('X-Amz-Signature');
+  my $incorrect_verbs = {
+    POST => 1,
+    PUT => 1
+  };
 
 
-    my $scope = $self->_scope($request);
+  if (exists($incorrect_verbs->{$verb})) {
+    die "Use AWS::Signature->sign sub for $verb method";
+  }
 
-    $uri->query_param('X-Amz-Algorithm'  => $self->_algorithm);
-    $uri->query_param('X-Amz-Credential' => $self->access_key . '/' . $scope);
-    $uri->query_param('X-Amz-Date'       => $self->_datetime($request));
-    $uri->query_param('X-Amz-Expires'    => $expires) if $expires;
-    $uri->query_param('X-Amz-SignedHeaders' => 'host');
+  if (ref $arg1 && UNIVERSAL::isa($arg1,'HTTP::Request')) {
+      $request = $arg1;
+      $uri = $request->uri;
+      my $content = $request->content;
+      $uri->query($content) if $content;
+      if (my $date = $request->header('X-Amz-Date') || $request->header('Date')) {
+          $uri->query_param('Date'=>$date);
+      }
+   }
 
-    # If there was a security token passed, we need to supply it as part of the authorization
-    # because AWS requires it to validate IAM Role temporary credentials.
+   $uri ||= URI->new($arg1);
+   my $date = $uri->query_param_delete('Date') || $uri->query_param_delete('X-Amz-Date');
+   $request = HTTP::Request->new($verb => $uri);
+   $request->header('Date'=> $date);
+   $uri = $request->uri;  # because HTTP::Request->new() copies the uri!
 
-    if (defined($self->{security_token})) {
-        $uri->query_param('X-Amz-Security-Token' => $self->{security_token});
-    }
+   return $uri if $uri->query_param('X-Amz-Signature');
 
-    # Since we're providing auth via query parameters, we need to include UNSIGNED-PAYLOAD
-    # http://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
-    # it seems to only be needed for S3.
 
-    if ($scope =~ /\/s3\/aws4_request$/) {
-        $self->_sign($request, undef, 'UNSIGNED-PAYLOAD');
-    } else {
-        $self->_sign($request);
-    }
+   my $scope = $self->_scope($request);
 
-    my ($algorithm,$credential,$signedheaders,$signature) =
-	$request->header('Authorization') =~ /^(\S+) Credential=(\S+), SignedHeaders=(\S+), Signature=(\S+)/;
-    $uri->query_param_append('X-Amz-Signature'     => $signature);
-    return $uri;
+   $uri->query_param('X-Amz-Algorithm'  => $self->_algorithm);
+   $uri->query_param('X-Amz-Credential' => $self->access_key . '/' . $scope);
+   $uri->query_param('X-Amz-Date'       => $self->_datetime($request));
+   $uri->query_param('X-Amz-Expires'    => $expires) if $expires;
+   $uri->query_param('X-Amz-SignedHeaders' => 'host');
+
+   # If there was a security token passed, we need to supply it as part of the authorization
+   # because AWS requires it to validate IAM Role temporary credentials.
+
+   if (defined($self->{security_token})) {
+     $uri->query_param('X-Amz-Security-Token' => $self->{security_token});
+   }
+
+   # Since we're providing auth via query parameters, we need to include UNSIGNED-PAYLOAD
+   # http://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
+   # it seems to only be needed for S3.
+
+   if ($scope =~ /\/s3\/aws4_request$/) {
+     $self->_sign($request, undef, 'UNSIGNED-PAYLOAD');
+   } else {
+     $self->_sign($request);
+   }
+
+   my ($algorithm,$credential,$signedheaders,$signature) =
+   $request->header('Authorization') =~ /^(\S+) Credential=(\S+), SignedHeaders=(\S+), Signature=(\S+)/;
+   $uri->query_param_append('X-Amz-Signature'     => $signature);
+   return $uri;
 }
 
 
