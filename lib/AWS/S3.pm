@@ -91,7 +91,11 @@ sub add_bucket {
     my ( $s, %args ) = @_;
 
     my $type     = 'CreateBucket';
-    my $request  = $s->request( $type, bucket => $args{name}, location => $args{location} );
+    my $request  = $s->request(
+        $type,
+        bucket => $args{name},
+        ( $args{location} ? ( location => $args{location} ) : () ),
+    );
     my $response = $request->request();
 
     if ( my $msg = $response->friendly_error() ) {
