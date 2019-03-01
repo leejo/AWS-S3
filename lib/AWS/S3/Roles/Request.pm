@@ -67,7 +67,7 @@ has '_uri' => (
 
             # if we have a leading slash in the key name we need to add *another*
             # slash in the call to ->path to ensure it is retained
-            if ( $escaped_path =~ m!^/! ) {
+            if ( $escaped_path =~ m!^/! && $self->s3->honor_leading_slashes ) {
                 $uri->path( '/'.$escaped_path )
             } else {
                 $uri->path( $escaped_path )

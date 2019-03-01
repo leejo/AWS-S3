@@ -13,7 +13,7 @@ use AWS::S3::ResponseParser;
 use AWS::S3::Owner;
 use AWS::S3::Bucket;
 
-our $VERSION = '0.17';
+our $VERSION = '0.18';
 
 has [qw/access_key_id secret_access_key/] => ( is => 'ro', isa => 'Str' );
 
@@ -35,6 +35,12 @@ has 'ua' => (
     is      => 'ro',
     isa     => 'LWP::UserAgent',
     default => sub { LWP::UserAgent::Determined->new }
+);
+
+has 'honor_leading_slashes' => (
+    is      => 'ro',
+    isa     => 'Bool',
+    default => sub { 0 },
 );
 
 sub request {
@@ -126,6 +132,7 @@ AWS::S3 - Lightweight interface to Amazon S3 (Simple Storage Service)
   my $s3 = AWS::S3->new(
     access_key_id     => 'E654SAKIASDD64ERAF0O',
     secret_access_key => 'LgTZ25nCD+9LiCV6ujofudY1D6e2vfK0R4GLsI4H',
+    honor_leading_slashes => 0, # set to allow leading slashes in bucket names, defaults to 0
   );
 
   # Add a bucket:
@@ -240,6 +247,11 @@ Default is C<s3.amazonaws.com>
 Optional.  Should be an instance of L<LWP::UserAgent> or a subclass of it.
 
 Defaults to creating a new instance of L<LWP::UserAgent::Determined>
+
+=head2 honor_leading_slashes
+
+Optional. Boolean to set if bucket names should include any leading slashes
+when sent to S3 - defaults to zero
 
 =head1 PUBLIC PROPERTIES
 
