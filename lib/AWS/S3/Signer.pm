@@ -175,16 +175,24 @@ has 'signature' => (
 );
 
 sub auth_header {
-    my $s = shift;
+    my ( $s,$version ) = @_;
 
+	$version ||= 2;
+	return _v4_headers( $s ) if $version == 4;
     return 'AWS ' . $s->s3->access_key_id . ':' . $s->signature;
-}    # end auth_header()
+}
+
+sub _v4_headers {
+	my $s = shift;
+
+	return {};
+}
 
 sub _trim {
     my ( $value ) = @_;
     $value =~ s/^\s+//;
     $value =~ s/\s+$//;
     return $value;
-}    # end _trim()
+}
 
 1;

@@ -74,4 +74,17 @@ like( $signer->signature,qr/^.{28}$/,'signature' );
 note( "methods" );
 like( $signer->auth_header,qr/AWS foo:.{28}/,'auth_header' );
 
+my $auth_headers = $signer->auth_header( 4 );
+
+cmp_deeply(
+	$auth_headers,
+	{
+		'Authorization' => 'AWS4-HMAC-SHA256 ',
+		'Credential'    => 'AKIAIOSFODNN7EXAMPLE/20130524/us-east-1/s3/aws4_request',
+		'SignedHeaders' => 'host;range;x-amz-date',
+		'Signature'     => 'fe5f80f77d5fa3beca038a248ff027d0445342fe2855ddc963176630326f1024',
+	},
+	'v4 auth headers',
+);
+
 done_testing();
