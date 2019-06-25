@@ -27,6 +27,7 @@ WriteMakefile(
         'Digest::HMAC_SHA1'          => 0,
         'Test::Deep'                 => 0,
         'JSON::XS'                   => 0,
+        'Signer::AWSv4'              => 0.04,
       },
     BUILD_REQUIRES => {
         'Test::More'       => 0.31,
