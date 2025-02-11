@@ -5,29 +5,31 @@ use POSIX 'strftime';
 use URI;
 use URI::QueryParam;
 use URI::Escape;
-use Digest::SHA 'sha256_hex','hmac_sha256','hmac_sha256_hex';
+use Digest::SHA 'sha256_hex', 'hmac_sha256', 'hmac_sha256_hex';
 use Date::Parse;
 use Carp 'croak';
 use HTTP::Request;
 
 # https://webservices.amazon.com/paapi5/documentation/common-request-parameters.html#host-and-region
-use constant PAAPI_REGION => {qw/
-	webservices.amazon.com.au	us-west-2
-	webservices.amazon.com.br	us-east-1
-	webservices.amazon.ca		us-east-1
-	webservices.amazon.fr		eu-west-1
-	webservices.amazon.de		eu-west-1
-	webservices.amazon.in		eu-west-1
-	webservices.amazon.it		eu-west-1
-	webservices.amazon.co.jp	us-west-2
-	webservices.amazon.com.mx	us-east-1
-	webservices.amazon.sg		us-west-2
-	webservices.amazon.es		eu-west-1
-	webservices.amazon.com.tr	eu-west-1
-	webservices.amazon.ae		eu-west-1
-	webservices.amazon.co.uk	eu-west-1
-	webservices.amazon.com		us-east-1
-/};
+use constant PAAPI_REGION => {
+    qw/
+      webservices.amazon.com.au	us-west-2
+      webservices.amazon.com.br	us-east-1
+      webservices.amazon.ca		us-east-1
+      webservices.amazon.fr		eu-west-1
+      webservices.amazon.de		eu-west-1
+      webservices.amazon.in		eu-west-1
+      webservices.amazon.it		eu-west-1
+      webservices.amazon.co.jp	us-west-2
+      webservices.amazon.com.mx	us-east-1
+      webservices.amazon.sg		us-west-2
+      webservices.amazon.es		eu-west-1
+      webservices.amazon.com.tr	eu-west-1
+      webservices.amazon.ae		eu-west-1
+      webservices.amazon.co.uk	eu-west-1
+      webservices.amazon.com		us-east-1
+      /
+};
 
 our $VERSION = '1.02';
 
@@ -108,31 +110,40 @@ sub new {
     my $self = shift;
     my %args = @_;
 
-    my ($id,$secret,$token,$region,$service);
-    if (ref $args{-security_token} && $args{-security_token}->can('access_key_id')) {
-	$id     = $args{-security_token}->accessKeyId;
-	$secret = $args{-security_token}->secretAccessKey;
+    my ( $id, $secret, $token, $region, $service );
+    if ( ref $args{-security_token}
+        && $args{-security_token}->can('access_key_id') )
+    {
+        $id     = $args{-security_token}->accessKeyId;
+        $secret = $args{-security_token}->secretAccessKey;
     }
 
-    $id           ||= $args{-access_key} || $ENV{EC2_ACCESS_KEY}
-                      or croak "Please provide -access_key parameter or define environment variable EC2_ACCESS_KEY";
-    $secret       ||= $args{-secret_key} || $ENV{EC2_SECRET_KEY}
-                      or croak "Please provide -secret_key or define environment variable EC2_SECRET_KEY";
-    $region       = $args{-region} || $ENV{EC2_REGION};
-    $service      = $args{-service} || $ENV{EC2_SERVICE};
+    $id ||= $args{-access_key} || $ENV{EC2_ACCESS_KEY}
+      or croak
+"Please provide -access_key parameter or define environment variable EC2_ACCESS_KEY";
+    $secret ||= $args{-secret_key} || $ENV{EC2_SECRET_KEY}
+      or croak
+"Please provide -secret_key or define environment variable EC2_SECRET_KEY";
+    $region  = $args{-region}  || $ENV{EC2_REGION};
+    $service = $args{-service} || $ENV{EC2_SERVICE};
 
     return bless {
         access_key => $id,
         secret_key => $secret,
-        region => $region,
-        region => $args{-region},
-        service => $args{-service},
-        (defined($args{-security_token}) ? (security_token => $args{-security_token}) : ()),
-    },ref $self || $self;
+        region     => $region,
+        region     => $args{-region},
+        service    => $args{-service},
+        (
+            defined( $args{-security_token} )
+            ? ( security_token => $args{-security_token} )
+            : ()
+        ),
+      },
+      ref $self || $self;
 }
 
-sub access_key { shift->{access_key } } 
-sub secret_key { shift->{secret_key } }
+sub access_key { shift->{access_key} }
+sub secret_key { shift->{secret_key} }
 
 =item $signer->sign($request [,$region] [,$payload_sha256_hex])
 
@@ -169,9 +180,9 @@ will include everything needed to perform the request.
 
 sub sign {
     my $self = shift;
-    my ($request,$region,$payload_sha256_hex) = @_;
+    my ( $request, $region, $payload_sha256_hex ) = @_;
     $self->_add_date_header($request);
-    $self->_sign($request,$region,$payload_sha256_hex);
+    $self->_sign( $request, $region, $payload_sha256_hex );
 }
 
 =item my $url $signer->signed_url($request_or_uri [,$expires] [,$verb])
@@ -190,122 +201,127 @@ Pass an optional verb which is useful for HEAD requests, this defaults to GET.
 
 =cut
 
-
 sub signed_url {
-  my $self    = shift;
-  my ($arg1,$expires, $verb) = @_;
-  my ($request,$uri);
+    my $self = shift;
+    my ( $arg1, $expires, $verb ) = @_;
+    my ( $request, $uri );
 
-  $verb ||= 'GET';
-  $verb = uc($verb);
+    $verb ||= 'GET';
+    $verb = uc($verb);
 
-  my $incorrect_verbs = {
-    POST => 1,
-    PUT => 1
-  };
+    my $incorrect_verbs = {
+        POST => 1,
+        PUT  => 1
+    };
 
+    if ( exists( $incorrect_verbs->{$verb} ) ) {
+        die "Use AWS::Signature->sign sub for $verb method";
+    }
 
-  if (exists($incorrect_verbs->{$verb})) {
-    die "Use AWS::Signature->sign sub for $verb method";
-  }
+    if ( ref $arg1 && UNIVERSAL::isa( $arg1, 'HTTP::Request' ) ) {
+        $request = $arg1;
+        $uri     = $request->uri;
+        my $content = $request->content;
+        $uri->query($content) if $content;
+        if ( my $date =
+            $request->header('X-Amz-Date') || $request->header('Date') )
+        {
+            $uri->query_param( 'Date' => $date );
+        }
+    }
 
-  if (ref $arg1 && UNIVERSAL::isa($arg1,'HTTP::Request')) {
-      $request = $arg1;
-      $uri = $request->uri;
-      my $content = $request->content;
-      $uri->query($content) if $content;
-      if (my $date = $request->header('X-Amz-Date') || $request->header('Date')) {
-          $uri->query_param('Date'=>$date);
-      }
-   }
+    $uri ||= URI->new($arg1);
+    my $date = $uri->query_param_delete('Date')
+      || $uri->query_param_delete('X-Amz-Date');
+    $request = HTTP::Request->new( $verb => $uri );
+    $request->header( 'Date' => $date );
+    $uri = $request->uri;    # because HTTP::Request->new() copies the uri!
 
-   $uri ||= URI->new($arg1);
-   my $date = $uri->query_param_delete('Date') || $uri->query_param_delete('X-Amz-Date');
-   $request = HTTP::Request->new($verb => $uri);
-   $request->header('Date'=> $date);
-   $uri = $request->uri;  # because HTTP::Request->new() copies the uri!
+    return $uri if $uri->query_param('X-Amz-Signature');
 
-   return $uri if $uri->query_param('X-Amz-Signature');
+    my $scope = $self->_scope($request);
 
+    $uri->query_param( 'X-Amz-Algorithm'  => $self->_algorithm );
+    $uri->query_param( 'X-Amz-Credential' => $self->access_key . '/' . $scope );
+    $uri->query_param( 'X-Amz-Date'       => $self->_datetime($request) );
+    $uri->query_param( 'X-Amz-Expires'    => $expires ) if $expires;
+    $uri->query_param( 'X-Amz-SignedHeaders' => 'host' );
 
-   my $scope = $self->_scope($request);
+# If there was a security token passed, we need to supply it as part of the authorization
+# because AWS requires it to validate IAM Role temporary credentials.
 
-   $uri->query_param('X-Amz-Algorithm'  => $self->_algorithm);
-   $uri->query_param('X-Amz-Credential' => $self->access_key . '/' . $scope);
-   $uri->query_param('X-Amz-Date'       => $self->_datetime($request));
-   $uri->query_param('X-Amz-Expires'    => $expires) if $expires;
-   $uri->query_param('X-Amz-SignedHeaders' => 'host');
+    if ( defined( $self->{security_token} ) ) {
+        $uri->query_param( 'X-Amz-Security-Token' => $self->{security_token} );
+    }
 
-   # If there was a security token passed, we need to supply it as part of the authorization
-   # because AWS requires it to validate IAM Role temporary credentials.
+# Since we're providing auth via query parameters, we need to include UNSIGNED-PAYLOAD
+# http://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
+# it seems to only be needed for S3.
 
-   if (defined($self->{security_token})) {
-     $uri->query_param('X-Amz-Security-Token' => $self->{security_token});
-   }
+    if ( $scope =~ /\/s3\/aws4_request$/ ) {
+        $self->_sign( $request, undef, 'UNSIGNED-PAYLOAD' );
+    }
+    else {
+        $self->_sign($request);
+    }
 
-   # Since we're providing auth via query parameters, we need to include UNSIGNED-PAYLOAD
-   # http://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
-   # it seems to only be needed for S3.
-
-   if ($scope =~ /\/s3\/aws4_request$/) {
-     $self->_sign($request, undef, 'UNSIGNED-PAYLOAD');
-   } else {
-     $self->_sign($request);
-   }
-
-   my ($algorithm,$credential,$signedheaders,$signature) =
-   $request->header('Authorization') =~ /^(\S+) Credential=(\S+), SignedHeaders=(\S+), Signature=(\S+)/;
-   $uri->query_param_append('X-Amz-Signature'     => $signature);
-   return $uri;
+    my ( $algorithm, $credential, $signedheaders, $signature ) =
+      $request->header('Authorization') =~
+      /^(\S+) Credential=(\S+), SignedHeaders=(\S+), Signature=(\S+)/;
+    $uri->query_param_append( 'X-Amz-Signature' => $signature );
+    return $uri;
 }
 
-
 sub _add_date_header {
-    my $self = shift;
+    my $self    = shift;
     my $request = shift;
     my $datetime;
-    unless ($datetime = $request->header('x-amz-date')) {
-	$datetime    = $self->_zulu_time($request);
-	$request->header('x-amz-date'=>$datetime);
+    unless ( $datetime = $request->header('x-amz-date') ) {
+        $datetime = $self->_zulu_time($request);
+        $request->header( 'x-amz-date' => $datetime );
     }
 }
 
 sub _scope {
-    my $self    = shift;
-    my ($request,$region) = @_;
+    my $self = shift;
+    my ( $request, $region ) = @_;
     my $host     = $request->uri->host;
     my $datetime = $self->_datetime($request);
     my ($date)   = $datetime =~ /^(\d+)T/;
     my $service;
-    if ($host =~ /^([\w.-]+)\.s3\.amazonaws.com/) { # S3 bucket virtual host
-	$service = 's3';
-	$region  ||= 'us-east-1';
-    } elsif  ($host =~ /^[\w-]+\.s3-([\w-]+)\.amazonaws\.com/) {
-	$service = 's3';
-	$region  ||= $2;
-    } elsif ($host =~ /^(\w+)[-.]([\w-]+)\.amazonaws\.com/) {
-	$service  = $1;
-	$region ||= $2;
-    } elsif ($host =~ /^([\w-]+)\.amazonaws\.com/) {
-	$service = $1;
-	$region  = 'us-east-1';
-    } elsif (exists PAAPI_REGION->{$host}) {
-	$service = 'ProductAdvertisingAPI';
-	$region  = PAAPI_REGION->{$host};
+    if ( $host =~ /^([\w.-]+)\.s3\.amazonaws.com/ ) {   # S3 bucket virtual host
+        $service = 's3';
+        $region ||= 'us-east-1';
+    }
+    elsif ( $host =~ /^[\w-]+\.s3-([\w-]+)\.amazonaws\.com/ ) {
+        $service = 's3';
+        $region ||= $2;
+    }
+    elsif ( $host =~ /^(\w+)[-.]([\w-]+)\.amazonaws\.com/ ) {
+        $service = $1;
+        $region ||= $2;
+    }
+    elsif ( $host =~ /^([\w-]+)\.amazonaws\.com/ ) {
+        $service = $1;
+        $region  = 'us-east-1';
+    }
+    elsif ( exists PAAPI_REGION->{$host} ) {
+        $service = 'ProductAdvertisingAPI';
+        $region  = PAAPI_REGION->{$host};
     }
     $service ||= $self->{service} || 's3';
-    $region  ||= $self->{region} || 'us-east-1';  # default
+    $region  ||= $self->{region}  || 'us-east-1';    # default
     return "$date/$region/$service/aws4_request";
 }
 
 sub _parse_scope {
-    my $self = shift;
+    my $self  = shift;
     my $scope = shift;
-    return split '/',$scope;
+    return split '/', $scope;
 }
 
 sub _datetime {
-    my $self = shift;
+    my $self    = shift;
     my $request = shift;
     return $request->header('x-amz-date') || $self->_zulu_time($request);
 }
@@ -313,90 +329,102 @@ sub _datetime {
 sub _algorithm { return 'AWS4-HMAC-SHA256' }
 
 sub _sign {
-    my $self    = shift;
-    my ($request,$region,$payload_sha256_hex) = @_;
-    return if $request->header('Authorization'); # don't overwrite
+    my $self = shift;
+    my ( $request, $region, $payload_sha256_hex ) = @_;
+    return if $request->header('Authorization');    # don't overwrite
 
     my $datetime = $self->_datetime($request);
 
-    unless ($request->header('host')) {
-	my $host        = $request->uri->host;
-	$request->header(host=>$host);
+    unless ( $request->header('host') ) {
+        my $host = $request->uri->host;
+        $request->header( host => $host );
     }
 
-    my $scope      = $self->_scope($request,$region);
-    my ($date,$service);
-    ($date,$region,$service) = $self->_parse_scope($scope);
+    my $scope = $self->_scope( $request, $region );
+    my ( $date, $service );
+    ( $date, $region, $service ) = $self->_parse_scope($scope);
 
     my $secret_key = $self->secret_key;
     my $access_key = $self->access_key;
     my $algorithm  = $self->_algorithm;
 
-    my ($hashed_request,$signed_headers) = $self->_hash_canonical_request($request,$payload_sha256_hex);
-    my $string_to_sign                   = $self->_string_to_sign($datetime,$scope,$hashed_request);
-    my $signature                        = $self->_calculate_signature($secret_key,$service,$region,$date,$string_to_sign);
-    $request->header(Authorization => "$algorithm Credential=$access_key/$scope, SignedHeaders=$signed_headers, Signature=$signature");
+    my ( $hashed_request, $signed_headers ) =
+      $self->_hash_canonical_request( $request, $payload_sha256_hex );
+    my $string_to_sign =
+      $self->_string_to_sign( $datetime, $scope, $hashed_request );
+    my $signature =
+      $self->_calculate_signature( $secret_key, $service, $region, $date,
+        $string_to_sign );
+    $request->header( Authorization =>
+"$algorithm Credential=$access_key/$scope, SignedHeaders=$signed_headers, Signature=$signature"
+    );
 }
 
-sub _zulu_time { 
-    my $self = shift;
-    my $request = shift;
+sub _zulu_time {
+    my $self     = shift;
+    my $request  = shift;
     my $date     = $request->header('Date');
-    my @datetime = $date ? gmtime(str2time($date)) : gmtime();
-    return strftime('%Y%m%dT%H%M%SZ',@datetime);
+    my @datetime = $date ? gmtime( str2time($date) ) : gmtime();
+    return strftime( '%Y%m%dT%H%M%SZ', @datetime );
 }
 
 sub _hash_canonical_request {
     my $self = shift;
-    my ($request,$hashed_payload) = @_; # (HTTP::Request,sha256_hex($content))
-    my $method           = $request->method;
-    my $uri              = $request->uri;
-    my $path             = $uri->path || '/';
-    my @params           = $uri->query_form;
-    my $headers          = $request->headers;
-    $hashed_payload    ||= sha256_hex($request->content);
+    my ( $request, $hashed_payload ) =
+      @_;    # (HTTP::Request,sha256_hex($content))
+    my $method  = $request->method;
+    my $uri     = $request->uri;
+    my $path    = $uri->path || '/';
+    my @params  = $uri->query_form;
+    my $headers = $request->headers;
+    $hashed_payload ||= sha256_hex( $request->content );
 
     # canonicalize query string
     my %canonical;
-    while (my ($key,$value) = splice(@params,0,2)) {
-	$key   = uri_escape($key);
-	$value = uri_escape($value);
-	push @{$canonical{$key}},$value;
+    while ( my ( $key, $value ) = splice( @params, 0, 2 ) ) {
+        $key   = uri_escape($key);
+        $value = uri_escape($value);
+        push @{ $canonical{$key} }, $value;
     }
-    my $canonical_query_string = join '&',map {my $key = $_; map {"$key=$_"} sort @{$canonical{$key}}} sort keys %canonical;
+    my $canonical_query_string = join '&', map {
+        my $key = $_;
+        map { "$key=$_" } sort @{ $canonical{$key} }
+    } sort keys %canonical;
 
     # canonicalize the request headers
-    my (@canonical,%signed_fields);
-    for my $header (sort map {lc} $headers->header_field_names) {
-	next if $header =~ /^date$/i;
-	my @values = $headers->header($header);
-	# remove redundant whitespace
-	foreach (@values ) {
-	    next if /^".+"$/;
-	    s/^\s+//;
-	    s/\s+$//;
-	    s/(\s)\s+/$1/g;
-	}
-	push @canonical,"$header:".join(',',@values);
-	$signed_fields{$header}++;
-    }
-    my $canonical_headers = join "\n",@canonical;
-    $canonical_headers   .= "\n";
-    my $signed_headers    = join ';',sort map {lc} keys %signed_fields;
+    my ( @canonical, %signed_fields );
+    for my $header ( sort map { lc } $headers->header_field_names ) {
+        next if $header =~ /^date$/i;
+        my @values = $headers->header($header);
 
-    my $canonical_request = join("\n",$method,$path,$canonical_query_string,
-				 $canonical_headers,$signed_headers,$hashed_payload);
-    my $request_digest    = sha256_hex($canonical_request);
-    
-    return ($request_digest,$signed_headers);
+        # remove redundant whitespace
+        foreach (@values) {
+            next if /^".+"$/;
+            s/^\s+//;
+            s/\s+$//;
+            s/(\s)\s+/$1/g;
+        }
+        push @canonical, "$header:" . join( ',', @values );
+        $signed_fields{$header}++;
+    }
+    my $canonical_headers = join "\n", @canonical;
+    $canonical_headers .= "\n";
+    my $signed_headers = join ';', sort map { lc } keys %signed_fields;
+
+    my $canonical_request = join( "\n",
+        $method,            $path,           $canonical_query_string,
+        $canonical_headers, $signed_headers, $hashed_payload );
+    my $request_digest = sha256_hex($canonical_request);
+
+    return ( $request_digest, $signed_headers );
 }
 
 sub _string_to_sign {
     my $self = shift;
-    my ($datetime,$credential_scope,$hashed_request) = @_;
-    return join("\n",'AWS4-HMAC-SHA256',$datetime,$credential_scope,$hashed_request);
+    my ( $datetime, $credential_scope, $hashed_request ) = @_;
+    return join( "\n",
+        'AWS4-HMAC-SHA256', $datetime, $credential_scope, $hashed_request );
 }
-
 
 =item $signing_key = AWS::Signature4->signing_key($secret_access_key,$service_name,$region,$date)
 
@@ -406,19 +434,19 @@ Return just the signing key in the event you wish to roll your own signature.
 
 sub signing_key {
     my $self = shift;
-    my ($kSecret,$service,$region,$date) = @_;
-    my $kDate    = hmac_sha256($date,'AWS4'.$kSecret);
-    my $kRegion  = hmac_sha256($region,$kDate);
-    my $kService = hmac_sha256($service,$kRegion);
-    my $kSigning = hmac_sha256('aws4_request',$kService);
+    my ( $kSecret, $service, $region, $date ) = @_;
+    my $kDate    = hmac_sha256( $date,          'AWS4' . $kSecret );
+    my $kRegion  = hmac_sha256( $region,        $kDate );
+    my $kService = hmac_sha256( $service,       $kRegion );
+    my $kSigning = hmac_sha256( 'aws4_request', $kService );
     return $kSigning;
 }
 
 sub _calculate_signature {
     my $self = shift;
-    my ($kSecret,$service,$region,$date,$string_to_sign) = @_;
-    my $kSigning = $self->signing_key($kSecret,$service,$region,$date);
-    return hmac_sha256_hex($string_to_sign,$kSigning);
+    my ( $kSecret, $service, $region, $date, $string_to_sign ) = @_;
+    my $kSigning = $self->signing_key( $kSecret, $service, $region, $date );
+    return hmac_sha256_hex( $string_to_sign, $kSigning );
 }
 
 1;
@@ -440,5 +468,4 @@ License 2.0.  Refer to LICENSE for the full license text. In addition,
 please see DISCLAIMER.txt for disclaimers of warranty.
 
 =cut
-
 
