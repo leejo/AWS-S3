@@ -82,7 +82,7 @@ sub new {
     my $self = shift;
     my %args = @_;
 
-    my ($id,$secret,$token);
+    my ($id,$secret,$token,$region,$service);
     if (ref $args{-security_token} && $args{-security_token}->can('access_key_id')) {
 	$id     = $args{-security_token}->accessKeyId;
 	$secret = $args{-security_token}->secretAccessKey;
@@ -92,11 +92,15 @@ sub new {
                       or croak "Please provide -access_key parameter or define environment variable EC2_ACCESS_KEY";
     $secret       ||= $args{-secret_key} || $ENV{EC2_SECRET_KEY}
                       or croak "Please provide -secret_key or define environment variable EC2_SECRET_KEY";
+    $region       = $args{-region} || $ENV{EC2_REGION};
+    $service      = $args{-service} || $ENV{EC2_SERVICE};
 
     return bless {
-	access_key => $id,
-	secret_key => $secret,
-       (defined($args{-security_token}) ? (security_token => $args{-security_token}) : ()),
+        access_key => $id,
+        secret_key => $secret,
+        region => $region,
+        service => $service,
+        (defined($args{-security_token}) ? (security_token => $args{-security_token}) : ()),
     },ref $self || $self;
 }
 
@@ -259,8 +263,8 @@ sub _scope {
 	$service = $1;
 	$region  = 'us-east-1';
     }
-    $service ||= 's3';
-    $region  ||= 'us-east-1';  # default
+    $service ||= $self->{service} || 's3';
+    $region  ||= $self->{region} || 'us-east-1';  # default
     return "$date/$region/$service/aws4_request";
 }
 
