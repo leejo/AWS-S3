@@ -10,6 +10,25 @@ use Date::Parse;
 use Carp 'croak';
 use HTTP::Request;
 
+# https://webservices.amazon.com/paapi5/documentation/common-request-parameters.html#host-and-region
+use constant PAAPI_REGION => {qw/
+	webservices.amazon.com.au	us-west-2
+	webservices.amazon.com.br	us-east-1
+	webservices.amazon.ca		us-east-1
+	webservices.amazon.fr		eu-west-1
+	webservices.amazon.de		eu-west-1
+	webservices.amazon.in		eu-west-1
+	webservices.amazon.it		eu-west-1
+	webservices.amazon.co.jp	us-west-2
+	webservices.amazon.com.mx	us-east-1
+	webservices.amazon.sg		us-west-2
+	webservices.amazon.es		eu-west-1
+	webservices.amazon.com.tr	eu-west-1
+	webservices.amazon.ae		eu-west-1
+	webservices.amazon.co.uk	eu-west-1
+	webservices.amazon.com		us-east-1
+/};
+
 our $VERSION = '1.02';
 
 =head1 NAME
@@ -68,6 +87,10 @@ Arguments:
 
  -security_token     A VM::EC2::Security::Token object
 
+ -service            An AWS service
+
+ -region             An AWS region
+
 
 If a security token is provided, it overrides any values given for
 -access_key or -secret_key.
@@ -75,6 +98,9 @@ If a security token is provided, it overrides any values given for
 If the environment variables EC2_ACCESS_KEY and/or EC2_SECRET_KEY are
 set, their contents are used as defaults for -acccess_key and
 -secret_key.
+
+If -service and/or -region is not provided, they are automtically determined
+according to endpoint.
 
 =cut
 
@@ -99,7 +125,8 @@ sub new {
         access_key => $id,
         secret_key => $secret,
         region => $region,
-        service => $service,
+        region => $args{-region},
+        service => $args{-service},
         (defined($args{-security_token}) ? (security_token => $args{-security_token}) : ()),
     },ref $self || $self;
 }
@@ -262,6 +289,9 @@ sub _scope {
     } elsif ($host =~ /^([\w-]+)\.amazonaws\.com/) {
 	$service = $1;
 	$region  = 'us-east-1';
+    } elsif (exists PAAPI_REGION->{$host}) {
+	$service = 'ProductAdvertisingAPI';
+	$region  = PAAPI_REGION->{$host};
     }
     $service ||= $self->{service} || 's3';
     $region  ||= $self->{region} || 'us-east-1';  # default
