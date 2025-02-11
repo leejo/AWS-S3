@@ -10,18 +10,16 @@ use ExtUtils::MakeMaker;
 use FindBin '$Bin';
 use constant TEST_COUNT => 13;
 
-use lib "$Bin/lib", "$Bin/../lib", "$Bin/../blib/lib", "$Bin/../blib/arch";
-
 use Test::More tests => TEST_COUNT;
 
-use_ok('AWS::Signature4');
+use_ok('AWS::S3::Signer::V4');
 use_ok('HTTP::Request::Common');
 
-my $signer = AWS::Signature4->new(
+my $signer = AWS::S3::Signer::V4->new(
     -access_key => 'AKIDEXAMPLE',
     -secret_key => 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY'
 );
-ok( $signer, 'AWS::Signature4->new' );
+ok( $signer, 'AWS::S3::Signer::V4->new' );
 my $request = POST(
     'https://iam.amazonaws.com',
     [ Action => 'ListUsers', Version => '2010-05-08' ],

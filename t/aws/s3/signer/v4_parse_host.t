@@ -10,18 +10,16 @@ use ExtUtils::MakeMaker;
 use FindBin '$Bin';
 use constant TEST_COUNT => 1169;
 
-use lib "$Bin/lib", "$Bin/../lib", "$Bin/../blib/lib", "$Bin/../blib/arch";
-
 use Test::More tests => TEST_COUNT;
 use Test::Deep;
 
-use_ok('AWS::Signature4');
+use_ok('AWS::S3::Signer::V4');
 
-my $signer = AWS::Signature4->new(
+my $signer = AWS::S3::Signer::V4->new(
     -access_key => 'AKIDEXAMPLE',
     -secret_key => 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY'
 );
-isa_ok( $signer, 'AWS::Signature4' );
+isa_ok( $signer, 'AWS::S3::Signer::V4' );
 
 # yes there is a bucket name here that matches a region name
 # because inevitably someone will have done that
@@ -90,7 +88,7 @@ foreach my $bucket ( qw/
     }
 }
 
-my $paapi_region = AWS::Signature4::PAAPI_REGION();
+my $paapi_region = AWS::S3::Signer::V4::PAAPI_REGION();
 
 foreach my $host ( sort keys %{ $paapi_region } ) {
     cmp_deeply(

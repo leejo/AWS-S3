@@ -1,4 +1,4 @@
-package AWS::Signature4;
+package AWS::S3::Signer::V4;
 
 use strict;
 use POSIX 'strftime';
@@ -35,15 +35,15 @@ our $VERSION = '1.02';
 
 =head1 NAME
 
-AWS::Signature4 - Create a version4 signature for Amazon Web Services
+AWS::S3::Signer::V4 - Create a version4 signature for Amazon Web Services
 
 =head1 SYNOPSIS
 
- use AWS::Signature4;
+ use AWS::S3::Signer::V4;
  use HTTP::Request::Common;
  use LWP;
 
- my $signer = AWS::Signature4->new(-access_key => 'AKIDEXAMPLE',
+ my $signer = AWS::S3::Signer::V4->new(-access_key => 'AKIDEXAMPLE',
                                    -secret_key => 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY');
  my $ua     = LWP::UserAgent->new();
 
@@ -71,7 +71,7 @@ This module implement's Amazon Web Service's Signature version 4
 
 =over 4
 
-=item $signer = AWS::Signature4->new(-access_key => $account_id,-secret_key => $private_key);
+=item $signer = AWS::S3::Signer::V4->new(-access_key => $account_id,-secret_key => $private_key);
 
 Create a signing object using your AWS account ID and secret key. You
 may also use the temporary security tokens received from Amazon's STS
@@ -83,7 +83,7 @@ Arguments:
 
  Argument name       Argument Value
  -------------       --------------
- -access_key         An AWS acccess key (account ID)
+ -access_key         An AWS access key (account ID)
 
  -secret_key         An AWS secret key
 
@@ -98,7 +98,7 @@ If a security token is provided, it overrides any values given for
 -access_key or -secret_key.
 
 If the environment variables EC2_ACCESS_KEY and/or EC2_SECRET_KEY are
-set, their contents are used as defaults for -acccess_key and
+set, their contents are used as defaults for -access_key and
 -secret_key.
 
 If -service and/or -region is not provided, they are automtically determined
@@ -174,8 +174,6 @@ throw an exception.
 This method will generate a signed GET URL for the request. The URL
 will include everything needed to perform the request.
 
-=back
-
 =cut
 
 sub sign {
@@ -215,7 +213,7 @@ sub signed_url {
     };
 
     if ( exists( $incorrect_verbs->{$verb} ) ) {
-        die "Use AWS::Signature->sign sub for $verb method";
+        die "Use AWS::S3::Signer::V4->sign sub for $verb method";
     }
 
     if ( ref $arg1 && UNIVERSAL::isa( $arg1, 'HTTP::Request' ) ) {
@@ -480,7 +478,7 @@ sub _string_to_sign {
         'AWS4-HMAC-SHA256', $datetime, $credential_scope, $hashed_request );
 }
 
-=item $signing_key = AWS::Signature4->signing_key($secret_access_key,$service_name,$region,$date)
+=item $signing_key = AWS::S3::Signer::V4->signing_key($secret_access_key,$service_name,$region,$date)
 
 Return just the signing key in the event you wish to roll your own signature.
 
@@ -505,6 +503,8 @@ sub _calculate_signature {
 
 1;
 
+=back
+
 =head1 SEE ALSO
 
 L<VM::EC2>
@@ -512,6 +512,8 @@ L<VM::EC2>
 =head1 AUTHOR
 
 Lincoln Stein E<lt>lincoln.stein@gmail.comE<gt>.
+
+Forked by leejo for use in L<AWS::S3>.
 
 Copyright (c) 2014 Ontario Institute for Cancer Research
 
