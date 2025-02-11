@@ -8,7 +8,7 @@ use warnings;
 
 use ExtUtils::MakeMaker;
 use FindBin '$Bin';
-use constant TEST_COUNT => 12;
+use constant TEST_COUNT => 13;
 
 use lib "$Bin/lib", "$Bin/../lib", "$Bin/../blib/lib", "$Bin/../blib/arch";
 
@@ -71,5 +71,11 @@ $request = GET(
 
 is( $signer->signed_url($request), $expected, 'domain bucket url' );
 
-exit 0;
+$request = POST('https://cognito-identity.us-east-1.amazonaws.com',
+		   Date    => '1 January 2014 01:00:00 -0500');
 
+$signer->sign($request);
+
+is($request->header('Authorization'),'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20140101/us-east-1/cognito-identity/aws4_request, SignedHeaders=content-length;content-type;host;x-amz-date, Signature=047c9335c6a34448efc59c2a1813711602e208dcb42ae95cd3b881bd4d91b194');
+
+exit 0;

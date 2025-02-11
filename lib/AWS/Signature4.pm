@@ -289,29 +289,76 @@ sub _scope {
     my $datetime = $self->_datetime($request);
     my ($date)   = $datetime =~ /^(\d+)T/;
     my $service;
-    if ( $host =~ /^([\w.-]+)\.s3\.amazonaws.com/ ) {   # S3 bucket virtual host
-        $service = 's3';
-        $region ||= 'us-east-1';
+
+    ( $service, $region ) = $self->parse_host( $host, $region );
+
+    $service ||= $self->{service} || 's3';
+    $region  ||= $self->{region}  || 'us-east-1';    # default
+    return "$date/$region/$service/aws4_request";
+}
+
+sub parse_host {
+    my $self = shift;
+    my $host = shift;
+    my $region = shift;
+
+    # this entire thing should probably refactored into its own
+    # distribution, a la https://github.com/zirkelc/amazon-s3-url
+
+    # https://docs.aws.amazon.com/prescriptive-guidance/latest/defining-bucket-names-data-lakes/faq.html
+    # Only lowercase letters, numbers, dashes, and dots are allowed in S3 bucket names.
+    # Bucket names must be three to 63 characters in length,
+    # must begin and end with a number or letter,
+    # and cannot be in an IP address format.
+    my $bucket_re = '[a-z0-9][a-z0-9\-\.]{1,61}[a-z0-9]';
+    my $domain_re = 'amazonaws\.com';
+    my $region_re = '(?:af|ap|ca|eu|il|me|mx|sa|us)-[a-z]+-\d';
+
+    my ( $service, $url_style );
+
+    # listed in order of appearance found in the docs:
+    # https://community.aws/content/2biM1C0TkMkvJ2BLICiff8MKXS9/format-and-parse-amazon-s3-url?lang=en
+    if ( $host =~ /^(\w+)([-.])($region_re)\.$domain_re/ ) {
+        $service = $1;
+        $region ||= $3;
+        $url_style = $2 eq '-' ? 'regional dash-style' : 'regional dot-style';
     }
-    elsif ( $host =~ /^[\w-]+\.s3[\.-]([\w-]+)\.amazonaws\.com/ ) {
+    elsif ( $host =~ /^$bucket_re\.($region_re)\.s3\.$domain_re/ ) {
         $service = 's3';
         $region ||= $1;
+        $url_style = 'regional virtual-hosted-style';
     }
-    elsif ( $host =~ /^(\w+)[-.]([\w-]+)\.amazonaws\.com/ ) {
-        $service = $1;
-        $region ||= $2;
+    elsif ( $host =~ /^s3\.$domain_re/ ) {
+        $service = 's3';
+        $region  = 'us-east-1';
+        $url_style = 'legacy with path-style';
     }
-    elsif ( $host =~ /^([\w-]+)\.amazonaws\.com/ ) {
+    elsif ( $host =~ /^$bucket_re\.s3\.$domain_re/ ) {
+        $service = 's3';
+        $region ||= 'us-east-1';
+        $url_style = 'legacy with virtual-hosted-style';
+    }
+    elsif ( $host =~ /^$bucket_re\.s3[\.-]($region_re)\.$domain_re/ ) {
+        $service = 's3';
+        $region ||= $1;
+        $url_style = 'regional virtual-hosted-style';
+    }
+    elsif ($host =~ /^([\w-]+)\.([\w-]+)\.$domain_re/) {
         $service = $1;
-        $region  ||= 'us-east-1';
+        $region    ||= $2;
+        $url_style = 'legacy path-style service';
+    }
+    elsif ( $host =~ /^([\w-]+)\.$domain_re/ ) {
+        $service = $1;
+        $region    = 'us-east-1';
+        $url_style = 'legacy path-style';
     }
     elsif ( exists PAAPI_REGION->{$host} ) {
         $service = 'ProductAdvertisingAPI';
         $region  = PAAPI_REGION->{$host};
     }
-    $service ||= $self->{service} || 's3';
-    $region  ||= $self->{region}  || 'us-east-1';    # default
-    return "$date/$region/$service/aws4_request";
+
+    return ( $service, $region, $url_style );
 }
 
 sub _parse_scope {
@@ -380,6 +427,13 @@ sub _hash_canonical_request {
     $hashed_payload ||= sha256_hex( $request->content );
 
     # canonicalize query string
+
+    # in the case of the S3 api, but its still expected to be part of a
+    # canonical request.
+    if (scalar(@params) == 0 && defined($uri->query) && $uri->query ne '') {
+        push @params, ($uri->query, '');
+    }
+
     my %canonical;
     while ( my ( $key, $value ) = splice( @params, 0, 2 ) ) {
         $key   = uri_escape($key);
