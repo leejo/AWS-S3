@@ -4,9 +4,11 @@
 # `make test'. After `make install' it should work as `perl test.t'
 
 use strict;
+use warnings;
+
 use ExtUtils::MakeMaker;
 use FindBin '$Bin';
-use constant TEST_COUNT => 11;
+use constant TEST_COUNT => 12;
 
 use lib "$Bin/lib", "$Bin/../lib", "$Bin/../blib/lib", "$Bin/../blib/arch";
 
@@ -58,6 +60,16 @@ is( $signer->signed_url($url), $expected, 'signed url from url correct (1)' );
 $url =
 'https://iam.amazonaws.com?Action=ListUsers&Version=2010-05-08&Date=20140101T060000Z';
 is( $signer->signed_url($url), $expected, 'signed url from url correct (2)' );
+
+$expected
+  = "https://foo-bar.s3.us-west-2.amazonaws.com?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIDEXAMPLE%2F20140101%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20140101T060000Z&X-Amz-SignedHeaders=host&X-Amz-Signature=913da228dd51c9685e7658d7f7abc89cfb8e1d707670f6571e79f328e35d3efb";
+
+$request = GET(
+  'https://foo-bar.s3.us-west-2.amazonaws.com',
+  Date => '1 January 2014 01:00:00 -0500'
+);
+
+is( $signer->signed_url($request), $expected, 'domain bucket url' );
 
 exit 0;
 

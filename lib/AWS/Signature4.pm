@@ -293,9 +293,9 @@ sub _scope {
         $service = 's3';
         $region ||= 'us-east-1';
     }
-    elsif ( $host =~ /^[\w-]+\.s3-([\w-]+)\.amazonaws\.com/ ) {
+    elsif ( $host =~ /^[\w-]+\.s3[\.-]([\w-]+)\.amazonaws\.com/ ) {
         $service = 's3';
-        $region ||= $2;
+        $region ||= $1;
     }
     elsif ( $host =~ /^(\w+)[-.]([\w-]+)\.amazonaws\.com/ ) {
         $service = $1;
@@ -303,7 +303,7 @@ sub _scope {
     }
     elsif ( $host =~ /^([\w-]+)\.amazonaws\.com/ ) {
         $service = $1;
-        $region  = 'us-east-1';
+        $region  ||= 'us-east-1';
     }
     elsif ( exists PAAPI_REGION->{$host} ) {
         $service = 'ProductAdvertisingAPI';
