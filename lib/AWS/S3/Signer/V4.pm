@@ -31,8 +31,6 @@ use constant PAAPI_REGION => {
       /
 };
 
-our $VERSION = '1.02';
-
 =head1 NAME
 
 AWS::S3::Signer::V4 - Create a version4 signature for Amazon Web Services
