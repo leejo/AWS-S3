@@ -1,6 +1,7 @@
 
 package AWS::S3::ResponseParser;
 
+use constant DEBUG => $ENV{AWS_S3_DEBUG};
 use Moose;
 use XML::LibXML;
 use XML::LibXML::XPathContext;
@@ -61,6 +62,23 @@ has 'error_message' => (
     required => 0,
 );
 
+has 'xml' => (
+    is       => 'ro',
+    isa      => 'XML::LibXML::Document',
+    required => 0,
+    lazy    => 1,
+    clearer => '_clear_xml',
+    default => sub {
+        my $self = shift;
+
+        my $src = $self->response->content;
+        print STDERR ">>> AWS Response:\n", $src, "\n" if DEBUG;
+
+        return unless $src =~ m/^[[:space:]]*</s;
+        return $self->libxml->parse_string( $src );
+    }
+);
+
 has 'xpc' => (
     is       => 'ro',
     isa      => 'XML::LibXML::XPathContext',
@@ -69,10 +87,8 @@ has 'xpc' => (
     clearer => '_clear_xpc',
     default => sub {
         my $self = shift;
-
-        my $src = $self->response->content;
-        return unless $src =~ m/^[[:space:]]*</s;
-        my $doc = $self->libxml->parse_string( $src );
+        my $doc = $self->xml;
+        return unless $doc;
 
         my $xpc = XML::LibXML::XPathContext->new( $doc );
         $xpc->registerNs( 's3', 'http://s3.amazonaws.com/doc/2006-03-01/' );

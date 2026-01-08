@@ -81,10 +81,15 @@ sub owner {
     my $type     = 'ListAllMyBuckets';
     my $request  = $s->request( $type );
     my $response = $request->request();
-    my $xpc      = $response->xpc;
+
+    # Linode/Akamai E3 endpoints do not include the `xmlns` in
+    # ListAllMyBuckets, so use the localname to work with or
+    # without a declared XML namespace.
+    my $xml      = $response->xml;
+    my ($node)   = $xml->getElementsByLocalName('Owner');
     return AWS::S3::Owner->new(
-        id           => $xpc->findvalue( '//s3:Owner/s3:ID' ),
-        display_name => $xpc->findvalue( '//s3:Owner/s3:DisplayName' ),
+        id           => $node->getElementsByLocalName('ID')->string_value,
+        display_name => $node->getElementsByLocalName('DisplayName')->string_value,
     );
 }    # end owner()
 
@@ -95,13 +100,16 @@ sub buckets {
     my $request  = $s->request( $type );
     my $response = $request->request();
 
-    my $xpc     = $response->xpc;
+    # Linode/Akamai E3 endpoints do not include the `xmlns` in
+    # ListAllMyBuckets, so use the localname to work with or
+    # without a declared XML namespace.
+    my $xml     = $response->xml;
     my @buckets = ();
-    foreach my $node ( $xpc->findnodes( './/s3:Bucket' ) ) {
+    foreach my $node ( $xml->getElementsByLocalName( 'Bucket' ) ) {
         push @buckets,
           AWS::S3::Bucket->new(
-            name          => $xpc->findvalue( './/s3:Name',         $node ),
-            creation_date => $xpc->findvalue( './/s3:CreationDate', $node ),
+            name          => $node->getElementsByLocalName('Name')->string_value,
+            creation_date => $node->getElementsByLocalName('CreationDate')->string_value,
             s3            => $s,
           );
     }    # end foreach()
