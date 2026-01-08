@@ -4,6 +4,7 @@ package AWS::S3::ResponseParser;
 use Moose;
 use XML::LibXML;
 use XML::LibXML::XPathContext;
+use Log::Any qw( $LOG );
 
 has 'expect_nothing' => (
     is       => 'ro',
@@ -101,6 +102,7 @@ sub _parse_errors {
     # Do not try to parse non-xml:
     unless ( $src =~ m/^[[:space:]]*</s ) {
         ( my $code = $src ) =~ s/^[[:space:]]*\([0-9]*\).*$/$1/s;
+        $LOG->error('Error response from AWS', {code => $code, msg => $src});
         $self->error_code( $code );
         $self->error_message( $src );
         return 1;
@@ -112,8 +114,11 @@ sub _parse_errors {
     #### $s->_clear_xpc;
 
     if ( $self->xpc->findnodes( "//Error" ) ) {
-        $self->error_code( $self->xpc->findvalue( "//Error/Code" ) );
-        $self->error_message( $self->xpc->findvalue( "//Error/Message" ) );
+        my $code = $self->xpc->findvalue( "//Error/Code" );
+        my $msg = $self->xpc->findvalue( "//Error/Message" );
+        $LOG->error('Error response from AWS', {code => $code, msg => $msg});
+        $self->error_code( $code );
+        $self->error_message( $msg );
         return 1;
     }
 
