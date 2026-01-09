@@ -70,7 +70,7 @@ sub request {
     my ( $s, $type, %args ) = @_;
 
     my $class = "AWS::S3::Request::$type";
-    $LOG->debug('Loading AWS request class', {class => $class});
+
     load_class( $class );
     return $class->new( %args, s3 => $s, type => $type );
 }    # end request()
