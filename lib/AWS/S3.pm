@@ -14,7 +14,7 @@ use AWS::S3::ResponseParser;
 use AWS::S3::Owner;
 use AWS::S3::Bucket;
 
-our $VERSION = '1.00';
+our $VERSION = '2.00';
 
 has [qw/access_key_id secret_access_key/] => ( is => 'ro', isa => 'Str' );
 
@@ -244,8 +244,6 @@ AWS::S3 - Lightweight interface to Amazon S3 (Simple Storage Service)
 =head1 DESCRIPTION
 
 AWS::S3 attempts to provide an alternate interface to the Amazon S3 Simple Storage Service.
-
-B<NOTE:> Until AWS::S3 gets to version 1.000 it will not implement the full S3 interface.
 
 B<Disclaimer:> Several portions of AWS::S3 have been adopted from L<Net::Amazon::S3>.
 
